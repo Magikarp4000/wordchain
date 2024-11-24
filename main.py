@@ -14,7 +14,9 @@ class Game:
         self.vocab = list(self.model.wv.key_to_index.keys())
 
         self.tolerance = tolerance
+
         self.guesses = []
+        self.guesses_set = set()
     
     def get_random_word(self):
         return random.choice(self.vocab)
@@ -39,7 +41,6 @@ class Game:
     
     def get_closest_word_and_score(self, word):
         sims = [self.get_similarity(word, guess) for guess in self.guesses]
-        print(sims)
         best_index = np.argmax(sims)
         return self.guesses[best_index], sims[best_index]
     
@@ -52,13 +53,12 @@ class Game:
     def win(self):
         print(f"Congratulations! You chained to the target word in {len(self.guesses) - 1} guesses!")
 
-    def init_main(self, start_word, target_word):
-        print(f"Starting word: {start_word}")
-        print(f"Target word: {target_word}\n")
-        self.guesses.append(start_word)
+    def guessed(self, word):
+        return word in self.guesses_set
     
     def add_word(self, word):
         self.guesses.append(word)
+        self.guesses_set.add(word)
 
     def display_valid_feedback(self, word):
         print(f"Nice job! '{word}' has been added to the chain.\n")
@@ -69,7 +69,15 @@ class Game:
 
     def display_invalid_feedback(self):
         print("Sorry, that word is invalid. Please try again.\n")
+    
+    def display_guessed_feedback(self):
+        print("That word has already been guessed! Please try again.\n")
 
+    def init_main(self, start_word, target_word):
+        print(f"Starting word: {start_word}")
+        print(f"Target word: {target_word}\n")
+        self.add_word(start_word)
+    
     def main(self):
         start_word = self.get_random_word()
         target_word = self.get_random_word()
@@ -79,7 +87,13 @@ class Game:
         while running:
             guess = self.get_input()
 
-            if self.validate_word(guess):
+            if not self.validate_word(guess):
+                self.display_invalid_feedback()
+            
+            elif self.guessed(guess):
+                self.display_guessed_feedback()
+            
+            else:
                 best_word, best_score = self.get_closest_word_and_score(guess)
 
                 if self.validate_score(best_score):
@@ -91,11 +105,8 @@ class Game:
                         running = False
                 else:
                     self.display_unsimilar_feedback(best_word, best_score)
-            else:
-                self.display_invalid_feedback()
 
 
 if __name__ == '__main__':
     game = Game('v1')
     game.main()
-    # print(game.get_similarity('maths', 'mathematics'))
