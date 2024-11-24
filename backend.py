@@ -8,7 +8,7 @@ from utils import *
 
 
 class Backend:
-    def __init__(self, model_name=None, tolerance=0.3):
+    def __init__(self, model_name='v1', tolerance=0.3):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
         self.vocab_set = set(self.vocab)
@@ -123,38 +123,39 @@ class Backend:
         return [item[axis] for item in arr]
 
     def init_main(self):
+        self.start = self.find_valid_word()
+        self.target = self.find_valid_word()
         print(f"Starting word: {self.start}")
         print(f"Target word: {self.target}\n")
         self.add_word(self.start)
     
+    def update(self, guess):
+        if not self.validate_word(guess):
+            self.display_invalid_feedback()
+        
+        elif self.guessed(guess):
+            self.display_guessed_feedback()
+        
+        else:
+            best_word, best_score = self.get_closest_word_and_score(guess)
+
+            if self.validate_score(best_score):
+                self.add_word(guess)
+                self.display_valid_feedback(guess, best_score)
+
+                if self.is_target(guess, self.target):
+                    self.win()
+                    running = False
+            else:
+                self.display_unsimilar_feedback(best_word, best_score)
+                self.display_hints(guess)
+
     def main(self):
-        self.start = self.find_valid_word()
-        self.target = self.find_valid_word()
         self.init_main()
 
         running = True
         while running:
-            guess = self.get_input()
-
-            if not self.validate_word(guess):
-                self.display_invalid_feedback()
-            
-            elif self.guessed(guess):
-                self.display_guessed_feedback()
-            
-            else:
-                best_word, best_score = self.get_closest_word_and_score(guess)
-
-                if self.validate_score(best_score):
-                    self.add_word(guess)
-                    self.display_valid_feedback(guess, best_score)
-
-                    if self.is_target(guess, self.target):
-                        self.win()
-                        running = False
-                else:
-                    self.display_unsimilar_feedback(best_word, best_score)
-                    self.display_hints(guess)
+            self.update()
 
 
 if __name__ == '__main__':
