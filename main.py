@@ -11,6 +11,8 @@ class Game:
     def __init__(self, model_name=None, tolerance=0.3):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
+        self.vocab_set = set(self.vocab)
+        self.dictionary = self.load_words()
 
         self.tolerance = tolerance
 
@@ -29,14 +31,23 @@ class Game:
             model = Word2Vec()
             model.wv = keyed_vectors
             return model
+    
+    def load_words(self):
+        return open(f"{DIR_PATH}/datasets/words/en.txt", 'r').read().split('\n')
 
     def get_random_word(self):
         return random.choice(self.vocab)
     
+    def get_random_dictionary_word(self):
+        return random.choice(self.dictionary)
+    
+    def check_valid_word(self, word):
+        return word.isalpha() and word.islower() and word in self.vocab_set
+
     def find_valid_word(self):
         word = "_"
-        while not (word.isalpha() and word.islower()):
-            word = self.get_random_word()
+        while not self.check_valid_word(word):
+            word = self.get_random_dictionary_word()
         return word
 
     def parse_input(self, stream):
@@ -78,8 +89,9 @@ class Game:
     def win(self):
         print(f"Congratulations! You chained from '{self.start_word}' to '{self.target_word}' in {len(self.guesses) - 1} guesses!")
 
-    def display_valid_feedback(self, word):
-        print(f"Nice job! '{word}' has been added to the chain.\n")
+    def display_valid_feedback(self, word, best_score=None):
+        print(f"Nice job! '{word}' has been added to the chain.")
+        print(f"DEBUG: {round(best_score * 100, 2)}%\n")
     
     def display_unsimilar_feedback(self, best_word, best_score):
         percent = round(best_score * 100, 2)
@@ -116,7 +128,7 @@ class Game:
 
                 if self.validate_score(best_score):
                     self.add_word(guess)
-                    self.display_valid_feedback(guess)
+                    self.display_valid_feedback(guess, best_score)
 
                     if self.is_target(guess, self.target_word):
                         self.win()
@@ -126,5 +138,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    game = Game('googlenews')
+    game = Game('googlenews', tolerance=0.35)
     game.main()
