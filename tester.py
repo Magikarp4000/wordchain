@@ -1,7 +1,7 @@
-from main import Game
+from backend import Backend
 
 
-class Tester(Game):
+class Tester(Backend):
     def __init__(self, model_name=None, tolerance=0.3):
         super().__init__(model_name, tolerance)
     

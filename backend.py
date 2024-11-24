@@ -7,7 +7,7 @@ import numpy as np
 from utils import *
 
 
-class Game:
+class Backend:
     def __init__(self, model_name=None, tolerance=0.3):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
@@ -158,5 +158,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    game = Game('googlenews', tolerance=0.35)
+    game = Backend('googlenews', tolerance=0.35)
     game.main()
