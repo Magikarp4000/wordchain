@@ -155,7 +155,8 @@ class Backend:
 
         running = True
         while running:
-            self.update()
+            guess = self.get_input()
+            self.update(guess)
 
 
 if __name__ == '__main__':
