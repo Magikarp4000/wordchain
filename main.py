@@ -16,8 +16,8 @@ class Game:
 
         self.tolerance = tolerance
 
-        self.start_word = None
-        self.target_word = None
+        self.start = None
+        self.target = None
 
         self.guesses = []
         self.guesses_set = set()
@@ -51,7 +51,7 @@ class Game:
         return word
 
     def parse_input(self, stream):
-        return stream.lower().strip()
+        return stream.strip()
 
     def get_input(self):
         raw_stream = input("What word would you like to guess? ")
@@ -87,7 +87,7 @@ class Game:
         self.guesses_set.add(word)
 
     def win(self):
-        print(f"Congratulations! You chained from '{self.start_word}' to '{self.target_word}' in {len(self.guesses) - 1} guesses!")
+        print(f"Congratulations! You chained from '{self.start}' to '{self.target}' in {len(self.guesses) - 1} guesses!")
 
     def display_valid_feedback(self, word, best_score=None):
         print(f"Nice job! '{word}' has been added to the chain.")
@@ -103,14 +103,33 @@ class Game:
     def display_guessed_feedback(self):
         print("That word has already been guessed! Please try again.\n")
 
+    def display_hints(self, word):
+        hints = self.get_hints(word)
+        print(f"Hint: Try these words: {', '.join(hints)}\n")
+
+    def get_similarity_to_target(self, word):
+        return self.get_similarity(word, self.target)
+    
+    def get_max_similarity(self, word):
+        return max([self.get_similarity(word, guess) for guess in self.guesses])
+
+    def get_hints(self, word):
+        closest_words = self.model.wv.most_similar(positive=[word], topn=5)
+        closest_words = self.get_column(closest_words, axis=0)
+        closest_words.sort(key=self.get_max_similarity, reverse=True)
+        return closest_words
+
+    def get_column(self, arr, axis=0):
+        return [item[axis] for item in arr]
+
     def init_main(self):
-        print(f"Starting word: {self.start_word}")
-        print(f"Target word: {self.target_word}\n")
-        self.add_word(self.start_word)
+        print(f"Starting word: {self.start}")
+        print(f"Target word: {self.target}\n")
+        self.add_word(self.start)
     
     def main(self):
-        self.start_word = self.find_valid_word()
-        self.target_word = self.find_valid_word()
+        self.start = self.find_valid_word()
+        self.target = self.find_valid_word()
         self.init_main()
 
         running = True
@@ -130,11 +149,12 @@ class Game:
                     self.add_word(guess)
                     self.display_valid_feedback(guess, best_score)
 
-                    if self.is_target(guess, self.target_word):
+                    if self.is_target(guess, self.target):
                         self.win()
                         running = False
                 else:
                     self.display_unsimilar_feedback(best_word, best_score)
+                    self.display_hints(guess)
 
 
 if __name__ == '__main__':
