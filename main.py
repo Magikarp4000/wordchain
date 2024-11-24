@@ -1,4 +1,5 @@
 from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 
 import random
 import numpy as np
@@ -7,8 +8,8 @@ from utils import *
 
 
 class Game:
-    def __init__(self, model=None, tolerance=0.3):
-        self.model = Word2Vec.load(f"{DIR_PATH}/models/{model}/{model}.model")
+    def __init__(self, model_name=None, tolerance=0.3):
+        self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
 
         self.tolerance = tolerance
@@ -19,8 +20,24 @@ class Game:
         self.guesses = []
         self.guesses_set = set()
     
+    def load_model(self, model_name):
+        path = f"{DIR_PATH}/models/{model_name}/{model_name}.model"
+        try:
+            return Word2Vec.load(path)
+        except:
+            keyed_vectors = KeyedVectors.load(path)
+            model = Word2Vec()
+            model.wv = keyed_vectors
+            return model
+
     def get_random_word(self):
         return random.choice(self.vocab)
+    
+    def find_valid_word(self):
+        word = "_"
+        while not (word.isalpha() and word.islower()):
+            word = self.get_random_word()
+        return word
 
     def parse_input(self, stream):
         return stream.lower().strip()
@@ -80,8 +97,8 @@ class Game:
         self.add_word(self.start_word)
     
     def main(self):
-        self.start_word = self.get_random_word()
-        self.target_word = self.get_random_word()
+        self.start_word = self.find_valid_word()
+        self.target_word = self.find_valid_word()
         self.init_main()
 
         running = True
@@ -109,5 +126,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    game = Game('v1')
+    game = Game('googlenews')
     game.main()
