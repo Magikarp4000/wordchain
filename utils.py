@@ -1,5 +1,4 @@
 import os
 
 
-def get_dir_path(file):
-    return os.path.dirname(file)
+DIR_PATH = os.path.dirname(__file__)

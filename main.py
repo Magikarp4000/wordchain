@@ -6,8 +6,6 @@ import numpy as np
 from utils import *
 
 
-DIR_PATH = get_dir_path(__file__)
-
 class Game:
     def __init__(self, model=None, tolerance=0.3):
         self.model = Word2Vec.load(f"{DIR_PATH}/models/{model}/{model}.model")
