@@ -15,6 +15,9 @@ class Game:
 
         self.tolerance = tolerance
 
+        self.start_word = None
+        self.target_word = None
+
         self.guesses = []
         self.guesses_set = set()
     
@@ -49,9 +52,6 @@ class Game:
     
     def is_target(self, word, target):
         return word == target
-    
-    def win(self):
-        print(f"Congratulations! You chained to the target word in {len(self.guesses) - 1} guesses!")
 
     def guessed(self, word):
         return word in self.guesses_set
@@ -59,6 +59,9 @@ class Game:
     def add_word(self, word):
         self.guesses.append(word)
         self.guesses_set.add(word)
+
+    def win(self):
+        print(f"Congratulations! You chained from '{self.start_word}' to '{self.target_word}' in {len(self.guesses) - 1} guesses!")
 
     def display_valid_feedback(self, word):
         print(f"Nice job! '{word}' has been added to the chain.\n")
@@ -73,15 +76,15 @@ class Game:
     def display_guessed_feedback(self):
         print("That word has already been guessed! Please try again.\n")
 
-    def init_main(self, start_word, target_word):
-        print(f"Starting word: {start_word}")
-        print(f"Target word: {target_word}\n")
-        self.add_word(start_word)
+    def init_main(self):
+        print(f"Starting word: {self.start_word}")
+        print(f"Target word: {self.target_word}\n")
+        self.add_word(self.start_word)
     
     def main(self):
-        start_word = self.get_random_word()
-        target_word = self.get_random_word()
-        self.init_main(start_word, target_word)
+        self.start_word = self.get_random_word()
+        self.target_word = self.get_random_word()
+        self.init_main()
 
         running = True
         while running:
@@ -100,7 +103,7 @@ class Game:
                     self.add_word(guess)
                     self.display_valid_feedback(guess)
 
-                    if self.is_target(guess, target_word):
+                    if self.is_target(guess, self.target_word):
                         self.win()
                         running = False
                 else:
