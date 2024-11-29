@@ -1,7 +1,9 @@
 from config import *
 
+import random
+
 from PySide6.QtCore import Qt, QPointF, QEvent
-from PySide6.QtGui import QBrush, QMouseEvent, QPainter, QPen
+from PySide6.QtGui import QBrush, QMouseEvent, QKeyEvent, QPainter, QPen
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -21,9 +23,9 @@ from PySide6.QtWidgets import (
 
 
 class Node(QGraphicsEllipseItem):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setPos(100, 100)
+    def __init__(self, x, y, w, h):
+        super().__init__(x, y, w, h)
+        self.setPos(250, 250)
         brush = QBrush(Qt.red)
         self.setBrush(brush)
 
@@ -40,12 +42,12 @@ class Gui(QWidget):
         self.view.viewport().installEventFilter(self)
         self.view.setMouseTracking(True)
         self.view.setRenderHint(QPainter.Antialiasing)
-        self.view.setFixedSize(WIDTH, HEIGHT - HEIGHT / 5)
 
         # text input
         self.textbox = QLineEdit()
-        self.textbox.setFixedSize(WIDTH, HEIGHT / 5)
+        self.textbox.setFixedHeight(HEIGHT / 5)
         self.textbox.setPlaceholderText("Enter your guess: ")
+        self.textbox.installEventFilter(self)
 
         # layout
         self.root = QVBoxLayout()
@@ -57,6 +59,10 @@ class Gui(QWidget):
         self.mouse_pos = QPointF(0, 0)
         self.nodes = []
     
+    def add_node(self, node):
+        self.nodes.append(node)
+        self.scene.addItem(node)
+
     def move_all_nodes(self, dx, dy):
         for node in self.nodes:
             node.moveBy(dx, dy)
@@ -64,22 +70,27 @@ class Gui(QWidget):
     def delta_mouse_pos(self, new_pos):
         return new_pos - self.mouse_pos
 
+    def handle_mouse_move(self, event: QMouseEvent):
+        new_pos = event.position()
+        dpos = self.delta_mouse_pos(new_pos)
+        self.mouse_pos = new_pos
+
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self.move_all_nodes(dpos.x(), dpos.y())
+            print(dpos)
+    
+    def handle_key_press(self, event: QKeyEvent):
+        text = self.textbox.text()
+        if event.key() == Qt.Key_Return:
+            self.add_node(Node(random.randint(0, WIDTH), random.randint(0, HEIGHT), 50, 50))
+            print(self.nodes)
+
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
-            mouse = QMouseEvent(event)
-            
-            new_pos = mouse.position()
-            dpos = self.delta_mouse_pos(new_pos)
-            self.mouse_pos = new_pos
+            self.handle_mouse_move(event)
+        elif (event.type() == QEvent.KeyPress):
+            self.handle_key_press(event)
 
-            if mouse.buttons() == Qt.MouseButton.LeftButton:
-                self.move_all_nodes(dpos.x(), dpos.y())
-                print(dpos)
-        
-        if (event.type() == QEvent.KeyPress):
-            print("hi")
-            print(self.textbox.text())
-        
         return QMainWindow.eventFilter(self, source, event)
 
 
