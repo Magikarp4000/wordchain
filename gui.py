@@ -29,6 +29,7 @@ class Node(QGraphicsEllipseItem):
         self.setBrush(QBrush(Qt.red))
         self.setPos(x, y)
         self.label = QGraphicsTextItem(text, self)
+        self.label.setPos(x, y)
 
 
 class Gui(QWidget):
