@@ -1,72 +1,70 @@
-from config import *
-from backend import Backend
+import sys
 
-from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.clock import Clock
-from kivy.graphics import Ellipse
-from kivy.vector import Vector
-from kivy.uix.textinput import TextInput
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
+from PySide6.QtCore import Qt, QPointF, QEvent
+from PySide6.QtGui import QBrush, QMouseEvent, QPainter, QPen
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsEllipseItem,
+    QGraphicsItem,
+    QGraphicsRectItem,
+    QGraphicsScene,
+    QGraphicsView,
+    QHBoxLayout,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+    QMainWindow,
+)
 
 
-class WordChainApp(App):
-    def build(self):
-        gui = GUI()
-        return gui
+SPEED = 2
 
 
-class GUI(BoxLayout):
+class Gui(QMainWindow):
     def __init__(self):
-        super().__init__(orientation='vertical')
-        input_box = InputBox(font_size=30,
-                              size_hint_y=None,
-                              height=100)
+        super().__init__()
+
+        # graphics
+        self.scene = QGraphicsScene(0, 0, 600, 450)
+
+        self.node = QGraphicsEllipseItem(0, 0, 50, 50)
+        self.node.setPos(100, 100)
+
+        brush = QBrush(Qt.red)
+        self.node.setBrush(brush)
+
+        self.scene.addItem(self.node)
+
+        self.view = QGraphicsView(self.scene)
+        self.view.viewport().installEventFilter(self)
+        self.view.setMouseTracking(True)
+        self.view.setRenderHint(QPainter.Antialiasing)
+
+        # layout
+        self.setCentralWidget(self.view)
         
-        self.add_widget(input_box)
-
-
-class InputBox(TextInput):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs, multiline=False)
-        self.bind(on_text_validate=InputBox.on_enter)
-        self.text_validate_unfocus = False
+        # state
+        self.mouse_pos = QPointF(0, 0)
     
-    def clear(self):
-        self.text = ""
-    
-    def on_enter(self):
-        print(self, self.text)
-        self.clear()
+    def eventFilter(self, source, event: QEvent):
+        if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
+            mouse = QMouseEvent(event)
+            
+            old_pos = self.mouse_pos
+            new_pos = mouse.position()
+            dpos = new_pos - old_pos
+            self.mouse_pos = new_pos
 
+            if mouse.buttons() == Qt.MouseButton.LeftButton:
+                self.node.moveBy(dpos.x(), dpos.y())
+                print(dpos)
+        
+        return QMainWindow.eventFilter(self, source, event)
 
-# class GUI(Widget):
-#     backend = Backend()
-#     backend.init_main()
-#     nodes = []
-
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#         self.textbox = TextBox()
-#         self.add_widget(self.textbox)
-
-#     def update(self, *args):
-#         pass
-#         # self.backend.update('')
-    
-#     def on_touch_down(self, touch):
-#         with self.canvas:
-#             self.nodes.append(Node(Vector(touch.pos)))
-
-
-class Node(Widget):
-    size = Vector(50, 50)
-
-    def __init__(self, pos=Vector(0, 0)):
-        self.pos = pos - self.size / 2
-        self.image = Ellipse(pos=self.pos, size=self.size)
-    
 
 if __name__ == '__main__':
-    WordChainApp().run()
+    app = QApplication([])
+    gui = Gui()
+    gui.show()
+    app.exec()
