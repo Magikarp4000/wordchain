@@ -3,7 +3,7 @@ from config import *
 import random
 
 from PySide6.QtCore import Qt, QPointF, QEvent
-from PySide6.QtGui import QBrush, QMouseEvent, QKeyEvent, QPainter, QPen
+from PySide6.QtGui import QBrush, QMouseEvent, QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -28,6 +28,7 @@ class Node(QGraphicsEllipseItem):
         super().__init__(x, y, w, h)
         self.setBrush(QBrush(Qt.red))
         self.setPos(x, y)
+
         self.label = QGraphicsTextItem(text, self)
         self.label.setPos(x, y)
 
@@ -87,8 +88,10 @@ class Gui(QWidget):
     def handle_key_press(self, event: QKeyEvent):
         text = self.textbox.text()
         if event.key() == Qt.Key_Return:
-            self.add_node(Node(text, *self.get_random_pos(), 50, 50))
-            print(self.nodes)
+            node = Node(text, *self.get_random_pos(), 50, 50)
+            self.add_node(node)
+            self.textbox.clear()
+            print(node)
 
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
