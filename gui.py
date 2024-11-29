@@ -1,4 +1,4 @@
-import sys
+from config import *
 
 from PySide6.QtCore import Qt, QPointF, QEvent
 from PySide6.QtGui import QBrush, QMouseEvent, QPainter, QPen
@@ -10,15 +10,14 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QHBoxLayout,
+    QStackedLayout,
     QPushButton,
     QSlider,
     QVBoxLayout,
     QWidget,
     QMainWindow,
+    QLineEdit,
 )
-
-
-SPEED = 2
 
 
 class Node(QGraphicsEllipseItem):
@@ -29,21 +28,30 @@ class Node(QGraphicsEllipseItem):
         self.setBrush(brush)
 
 
-class Gui(QMainWindow):
+class Gui(QWidget):
     def __init__(self):
         super().__init__()
 
         # scene
-        self.scene = QGraphicsScene(0, 0, 600, 450)
+        self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)
 
         # view
         self.view = QGraphicsView(self.scene)
         self.view.viewport().installEventFilter(self)
         self.view.setMouseTracking(True)
         self.view.setRenderHint(QPainter.Antialiasing)
+        self.view.setFixedSize(WIDTH, HEIGHT - HEIGHT / 5)
+
+        # text input
+        self.textbox = QLineEdit()
+        self.textbox.setFixedSize(WIDTH, HEIGHT / 5)
+        self.textbox.setPlaceholderText("Enter your guess: ")
 
         # layout
-        self.setCentralWidget(self.view)
+        self.root = QVBoxLayout()
+        self.root.addWidget(self.textbox)
+        self.root.addWidget(self.view)
+        self.setLayout(self.root)
         
         # state
         self.mouse_pos = QPointF(0, 0)
@@ -67,6 +75,10 @@ class Gui(QMainWindow):
             if mouse.buttons() == Qt.MouseButton.LeftButton:
                 self.move_all_nodes(dpos.x(), dpos.y())
                 print(dpos)
+        
+        if (event.type() == QEvent.KeyPress):
+            print("hi")
+            print(self.textbox.text())
         
         return QMainWindow.eventFilter(self, source, event)
 
