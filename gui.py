@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
     QGraphicsRectItem,
+    QGraphicsTextItem,
     QGraphicsScene,
     QGraphicsView,
     QHBoxLayout,
@@ -23,11 +24,11 @@ from PySide6.QtWidgets import (
 
 
 class Node(QGraphicsEllipseItem):
-    def __init__(self, x, y, w, h):
+    def __init__(self, text, x, y, w, h):
         super().__init__(x, y, w, h)
-        self.setPos(250, 250)
-        brush = QBrush(Qt.red)
-        self.setBrush(brush)
+        self.setBrush(QBrush(Qt.red))
+        self.setPos(x, y)
+        self.label = QGraphicsTextItem(text, self)
 
 
 class Gui(QWidget):
@@ -59,6 +60,9 @@ class Gui(QWidget):
         self.mouse_pos = QPointF(0, 0)
         self.nodes = []
     
+    def get_random_pos(self):
+        return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
+
     def add_node(self, node):
         self.nodes.append(node)
         self.scene.addItem(node)
@@ -82,7 +86,7 @@ class Gui(QWidget):
     def handle_key_press(self, event: QKeyEvent):
         text = self.textbox.text()
         if event.key() == Qt.Key_Return:
-            self.add_node(Node(random.randint(0, WIDTH), random.randint(0, HEIGHT), 50, 50))
+            self.add_node(Node(text, *self.get_random_pos(), 50, 50))
             print(self.nodes)
 
     def eventFilter(self, source, event: QEvent):
