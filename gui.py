@@ -21,21 +21,22 @@ from PySide6.QtWidgets import (
 SPEED = 2
 
 
+class Node(QGraphicsEllipseItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setPos(100, 100)
+        brush = QBrush(Qt.red)
+        self.setBrush(brush)
+
+
 class Gui(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # graphics
+        # scene
         self.scene = QGraphicsScene(0, 0, 600, 450)
 
-        self.node = QGraphicsEllipseItem(0, 0, 50, 50)
-        self.node.setPos(100, 100)
-
-        brush = QBrush(Qt.red)
-        self.node.setBrush(brush)
-
-        self.scene.addItem(self.node)
-
+        # view
         self.view = QGraphicsView(self.scene)
         self.view.viewport().installEventFilter(self)
         self.view.setMouseTracking(True)
@@ -46,18 +47,25 @@ class Gui(QMainWindow):
         
         # state
         self.mouse_pos = QPointF(0, 0)
+        self.nodes = []
     
+    def move_all_nodes(self, dx, dy):
+        for node in self.nodes:
+            node.moveBy(dx, dy)
+    
+    def delta_mouse_pos(self, new_pos):
+        return new_pos - self.mouse_pos
+
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
             mouse = QMouseEvent(event)
             
-            old_pos = self.mouse_pos
             new_pos = mouse.position()
-            dpos = new_pos - old_pos
+            dpos = self.delta_mouse_pos(new_pos)
             self.mouse_pos = new_pos
 
             if mouse.buttons() == Qt.MouseButton.LeftButton:
-                self.node.moveBy(dpos.x(), dpos.y())
+                self.move_all_nodes(dpos.x(), dpos.y())
                 print(dpos)
         
         return QMainWindow.eventFilter(self, source, event)
