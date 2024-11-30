@@ -107,7 +107,7 @@ class Gui(QWidget):
         self.backend.init_core()
 
         self.add_node(self.backend.start)
-        self.center_on(self.items[self.backend.start])
+        # self.center_on(self.items[self.backend.start])
 
         # debug
         self.debug = debug
@@ -144,6 +144,7 @@ class Gui(QWidget):
         else:
             node = Node(word, *coords)
         self.add_item(node, word)
+        self.center_on(node)
     
     def add_line(self, word1, word2):
         label = f'line_{word1}_{word2}'
@@ -158,7 +159,8 @@ class Gui(QWidget):
     def center_on(self, item: QGraphicsItem):
         width, height = self.scene.sceneRect().width(), self.scene.sceneRect().height()
         offset = QPointF((width - NODE_SIZE)/ 2, (height - NODE_SIZE) / 2)
-        delta = -(self.origin.scenePos() + item.scenePos()) + offset
+        delta = -item.scenePos() + offset
+
         self.move_all_items(delta.x(), delta.y())
     
     def display(self, message):
