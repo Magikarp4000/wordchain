@@ -59,6 +59,7 @@ class StaticText(QGraphicsTextItem):
         super().__init__(text, *args, **kwargs)
         self.base_pos = QPointF(x, y)
         self.setPos(self.base_pos)
+        self.setDefaultTextColor(Qt.red)
         self.setZValue(1)
 
     def update(self, text):
@@ -139,22 +140,6 @@ class Gui(QWidget):
         for item in self.items.values():
             item.moveBy(dx, dy)
     
-    def delta_mouse_pos(self, new_pos):
-        return new_pos - self.mouse_pos
-
-    def handle_mouse_move(self, event: QMouseEvent):
-        new_pos = event.position()
-        dpos = self.delta_mouse_pos(new_pos)
-        self.mouse_pos = new_pos
-
-        if event.buttons() == Qt.MouseButton.LeftButton:
-            self.move_all_items(dpos.x(), dpos.y())
-    
-    def handle_key_press(self, event: QKeyEvent):
-        if event.key() == Qt.Key_Return:
-            text = self.textbox.text()
-            self.guess(text)
-    
     def display(self, message):
         self.display_text.update(message)
 
@@ -189,6 +174,22 @@ class Gui(QWidget):
                     print(label, self.items[label].pos().x(), self.items[label].pos().y())
 
         return QMainWindow.eventFilter(self, source, event) 
+    
+    def delta_mouse_pos(self, new_pos):
+        return new_pos - self.mouse_pos
+
+    def handle_mouse_move(self, event: QMouseEvent):
+        new_pos = event.position()
+        dpos = self.delta_mouse_pos(new_pos)
+        self.mouse_pos = new_pos
+
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self.move_all_items(dpos.x(), dpos.y())
+    
+    def handle_key_press(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Return:
+            text = self.textbox.text()
+            self.guess(text)
 
 
 if __name__ == '__main__':
