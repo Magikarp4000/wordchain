@@ -73,9 +73,6 @@ class Gui(QWidget):
     def __init__(self, debug=False):
         super().__init__()
 
-        # debug
-        self.debug = debug
-
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
 
@@ -110,7 +107,10 @@ class Gui(QWidget):
         self.backend.init_core()
 
         self.add_node(self.backend.start)
+        self.center_on(self.items[self.backend.start])
 
+        # debug
+        self.debug = debug
         if self.debug:
             print(f"Start word: {self.backend.start}")
             print(f"Target word: {self.backend.target}\n")
@@ -154,6 +154,12 @@ class Gui(QWidget):
         self.origin.moveBy(dx, dy)
         for item in self.items.values():
             item.moveBy(dx, dy)
+    
+    def center_on(self, item: QGraphicsItem):
+        width, height = self.scene.sceneRect().width(), self.scene.sceneRect().height()
+        offset = QPointF((width - NODE_SIZE)/ 2, (height - NODE_SIZE) / 2)
+        delta = -(self.origin.scenePos() + item.scenePos()) + offset
+        self.move_all_items(delta.x(), delta.y())
     
     def display(self, message):
         self.display_text.update(message)
@@ -211,7 +217,6 @@ class Gui(QWidget):
 
 
 if __name__ == '__main__':
-
     app = QApplication([])
     gui = Gui()
     gui.show()
