@@ -45,6 +45,8 @@ class Line(QGraphicsLineItem):
         center2 = end2.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
         self.setLine(QLineF(center1, center2))
 
+        self.setZValue(-1)
+
 
 class Gui(QWidget):
     def __init__(self):
