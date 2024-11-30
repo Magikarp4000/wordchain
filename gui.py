@@ -98,7 +98,6 @@ class Gui(QWidget):
     def successful_guess(self, word):
         node = Node(word, *self.get_random_pos(), 50, 50)
         self.add_node(node)
-        self.textbox.clear()
 
     def guess(self, word):
         state = self.backend.validate(word)
@@ -110,15 +109,19 @@ class Gui(QWidget):
             self.backend.display_guessed_feedback()
         
         elif state == VALID:
-            best_word, best_score = self.backend.get_closest_word_and_score(word)
+            closest_word, best_score = self.backend.get_closest_word_and_score(word)
 
             if not self.backend.validate_score(best_score):
-                self.backend.display_unsimilar_feedback(best_word, best_score)
+                self.backend.display_unsimilar_feedback(closest_word, best_score)
+
             else:
                 self.backend.display_valid_feedback(word, best_score)
                 self.successful_guess(word)
+
                 if self.backend.is_target(word):
                     self.backend.win()
+        
+        self.textbox.clear()
 
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
@@ -127,9 +130,6 @@ class Gui(QWidget):
             self.handle_key_press(event)
 
         return QMainWindow.eventFilter(self, source, event)
-
-
-
 
 
 if __name__ == '__main__':
