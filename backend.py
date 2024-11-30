@@ -108,6 +108,9 @@ class Agent:
             return False
         return True
     
+    def norm_similarity(self, sim):
+        return (sim + 1) / 2
+
     def get_similarity(self, w1, w2):
         return self.model.wv.similarity(w1, w2)
     

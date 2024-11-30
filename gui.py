@@ -27,14 +27,16 @@ from PySide6.QtWidgets import (
 
 
 class Node(QGraphicsEllipseItem):
-    def __init__(self, text, x, y, w, h):
+    def __init__(self, text, x, y, w, h, colour=NODE_COLOUR):
         super().__init__(0, 0, w, h)
         
         # circle
         scenePos = self.mapToScene(x, y)
-        # scenePos = QPointF(x, y)
         self.setPos(scenePos)
-        colour = QRgba64.fromRgba(*NODE_COLOUR)
+        try:
+            colour = QRgba64.fromRgba(*colour)
+        except OverflowError:
+            print(colour)
         self.setBrush(QBrush(colour))
 
         # label
@@ -110,22 +112,33 @@ class Gui(QWidget):
 
         self.add_node(self.backend.start)
     
-    def get_random_pos(self):
-        return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
-
     def add_item(self, item, key):
         self.items[key] = item
         self.scene.addItem(item)
+    
+    def get_random_pos(self):
+        return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
+
+    def calc_pos(self, word):
+        raw_pos = self.backend.get_2d(word)
+        norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
+        offset = self.origin.scenePos()
+        pos = QPointF(*norm_pos) + offset
+        return pos
+
+    def calc_colour(self, word):
+        sim = self.backend.get_similarity_to_target(word)
+        green_val = self.backend.norm_similarity(sim)
+        red_val = 1 - green_val
+        print("green red:", green_val, red_val)
+        colour = (int(255 * red_val), int(255 * green_val), 0, 255)
+        return colour
 
     def add_node(self, word, coords=None):
         if coords is None:
-            raw_pos = self.backend.get_2d(word)
-            norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
-            offset = self.origin.scenePos()
-            pos = QPointF(*norm_pos) + offset
-
-            node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE)
-            print(f"\n{word}: raw_pos {raw_pos}, pos {pos}\n")
+            pos = self.calc_pos(word)
+            colour = self.calc_colour(word)
+            node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE, colour)
         else:
             node = Node(word, *coords)
         self.add_item(node, word)
@@ -193,6 +206,7 @@ class Gui(QWidget):
 
 
 if __name__ == '__main__':
+
     app = QApplication([])
     gui = Gui()
     gui.show()
