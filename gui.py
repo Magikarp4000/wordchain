@@ -33,7 +33,7 @@ class Node(QGraphicsEllipseItem):
         # circle
         scenePos = self.mapToScene(x, y)
         self.setPos(scenePos)
-        self.setBrush(QBrush(Qt.red))
+        self.setBrush(QBrush(Qt.blue))
 
         # label
         self.label = QGraphicsTextItem(text, self)
@@ -56,13 +56,9 @@ class Gui(QWidget):
     def __init__(self):
         super().__init__()
 
-        # state
-        self.mouse_pos = QPointF(0, 0)
-        self.nodes = {}
-
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
-        # self.scene.setSceneRect(0, 0, WIDTH, HEIGHT)
+
         # view
         self.view = QGraphicsView(self.scene)
         self.view.viewport().installEventFilter(self)
@@ -81,8 +77,12 @@ class Gui(QWidget):
         self.root.addWidget(self.textbox)
         self.setLayout(self.root)
 
+        # state
+        self.mouse_pos = QPointF(0, 0)
+        self.nodes = {}
+
         # backend
-        self.backend = Agent(tolerance=0)
+        self.backend = Agent(tolerance=0.3)
         self.backend.init_core()
         node = Node(self.backend.start, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
         self.add_node(node, self.backend.start)
