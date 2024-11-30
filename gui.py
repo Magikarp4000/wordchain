@@ -4,7 +4,7 @@ from backend import Agent
 import random
 
 from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
-from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter
+from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter, QRgba64
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -33,7 +33,8 @@ class Node(QGraphicsEllipseItem):
         # circle
         scenePos = self.mapToScene(x, y)
         self.setPos(scenePos)
-        self.setBrush(QBrush(Qt.blue))
+        colour = QRgba64.fromRgba(*NODE_COLOUR)
+        self.setBrush(QBrush(colour))
 
         # label
         self.label = QGraphicsTextItem(text, self)
