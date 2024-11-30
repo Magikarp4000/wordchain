@@ -32,6 +32,7 @@ class Node(QGraphicsEllipseItem):
         
         # circle
         scenePos = self.mapToScene(x, y)
+        # scenePos = QPointF(x, y)
         self.setPos(scenePos)
         colour = QRgba64.fromRgba(*NODE_COLOUR)
         self.setBrush(QBrush(colour))
@@ -99,10 +100,12 @@ class Gui(QWidget):
         # state
         self.mouse_pos = QPointF(0, 0)
         self.items = {}
+        self.origin = Node("", 0, 0, 0, 0)
 
         # backend
-        self.backend = Agent(tolerance=0.3)
+        self.backend = Agent(tolerance=0.0)
         self.backend.init_core()
+        print(self.backend.bounds)
 
         self.add_node(self.backend.start)
     
@@ -113,10 +116,17 @@ class Gui(QWidget):
         self.items[key] = item
         self.scene.addItem(item)
 
-    def add_node(self, word):
-        pos = self.backend.get_2d(word)
-        print(f"\n{word}: {pos}\n")
-        node = Node(word, *pos, NODE_SIZE, NODE_SIZE)
+    def add_node(self, word, coords=None):
+        if coords is None:
+            raw_pos = self.backend.get_2d(word)
+            norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
+            offset = self.origin.scenePos()
+            pos = QPointF(*norm_pos) + offset
+
+            node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE)
+            print(f"\n{word}: raw_pos {raw_pos}, pos {pos}\n")
+        else:
+            node = Node(word, *coords)
         self.add_item(node, word)
     
     def add_line(self, word1, word2):
@@ -125,6 +135,7 @@ class Gui(QWidget):
         self.add_item(line, label)
 
     def move_all_items(self, dx, dy):
+        self.origin.moveBy(dx, dy)
         for item in self.items.values():
             item.moveBy(dx, dy)
     

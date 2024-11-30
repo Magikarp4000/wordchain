@@ -13,6 +13,20 @@ import json
 
 
 class Agent:
+
+    class Bounds:
+        def __init__(self, arr: np.array):
+            print(arr)
+            self.minX = min(arr[:, 0])
+            self.maxX = max(arr[:, 0])
+            self.minY = min(arr[:, 1])
+            self.maxY = max(arr[:, 1])
+            self.rangeX = self.maxX - self.minX
+            self.rangeY = self.maxY - self.minY
+        
+        def __str__(self):
+            return f"minX: {self.minX}, minY: {self.minY}, maxX: {self.maxX}, maxY: {self.maxY}, rangeX: {self.rangeX}, rangeY: {self.rangeY}"
+
     def __init__(self, model_name='v1', tolerance=0.3):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
@@ -20,6 +34,7 @@ class Agent:
         self.dictionary = self.load_words()
 
         self.embedding = self.load_embedding(model_name)
+        self.bounds = Agent.Bounds(np.array(list(self.embedding.values())))
         # self.embedding = self.train_embedding()
         # self.save_embedding(model_name)
 
@@ -98,6 +113,9 @@ class Agent:
     
     def get_2d(self, word):
         return self.embedding[word]
+
+    def norm(self, pos):
+        return (pos - (self.bounds.minX, self.bounds.minY)) / (self.bounds.rangeX, self.bounds.rangeY)
     
     def get_2d_similarity(self, w1, w2):
         return np.linalg.norm(self.embedding[w1] - self.embedding[w2])
