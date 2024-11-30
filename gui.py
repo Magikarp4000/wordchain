@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
     QGraphicsRectItem,
+    QGraphicsLineItem,
     QGraphicsTextItem,
     QGraphicsScene,
     QGraphicsView,
@@ -28,19 +29,28 @@ class Node(QGraphicsEllipseItem):
     def __init__(self, text, x, y, w, h):
         super().__init__(x, y, w, h)
         self.setBrush(QBrush(Qt.red))
-        self.setPos(x, y)
+        # self.setPos(x, y)
+        print(x, y)
 
         self.label = QGraphicsTextItem(text, self)
         self.label.setPos(x, y)
+
+
+class Line(QGraphicsLineItem):
+    def __init__(self, end1: Node, end2: Node):
+        pos = (end1.rect().x(), end1.rect().y(), end2.rect().x(), end2.rect().y())
+        print(pos)
+        super().__init__(*pos)
+        # self.setPos(end2.x(), end2.y())
 
 
 class Gui(QWidget):
     def __init__(self):
         super().__init__()
 
-        # backend
-        self.backend = Agent()
-        self.backend.init_core()
+        # state
+        self.mouse_pos = QPointF(0, 0)
+        self.nodes = {}
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)
@@ -62,20 +72,22 @@ class Gui(QWidget):
         self.root.addWidget(self.textbox)
         self.root.addWidget(self.view)
         self.setLayout(self.root)
-        
-        # state
-        self.mouse_pos = QPointF(0, 0)
-        self.nodes = []
+
+        # backend
+        self.backend = Agent(tolerance=0)
+        self.backend.init_core()
+        node = Node(self.backend.start, *self.get_random_pos(), 50, 50)
+        self.add_node(node, self.backend.start)
     
     def get_random_pos(self):
         return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
 
-    def add_node(self, node):
-        self.nodes.append(node)
+    def add_node(self, node, label):
+        self.nodes[label] = node
         self.scene.addItem(node)
 
     def move_all_nodes(self, dx, dy):
-        for node in self.nodes:
+        for node in self.nodes.values():
             node.moveBy(dx, dy)
     
     def delta_mouse_pos(self, new_pos):
@@ -88,16 +100,21 @@ class Gui(QWidget):
 
         if event.buttons() == Qt.MouseButton.LeftButton:
             self.move_all_nodes(dpos.x(), dpos.y())
-            print(dpos)
+            # print(dpos)
     
     def handle_key_press(self, event: QKeyEvent):
         if event.key() == Qt.Key_Return:
             text = self.textbox.text()
             self.guess(text)
     
-    def successful_guess(self, word):
+    def successful_guess(self, word, closest_word):
+        self.backend.add_word(word)
+
         node = Node(word, *self.get_random_pos(), 50, 50)
-        self.add_node(node)
+        self.add_node(node, word)
+        
+        line = Line(self.nodes[word], self.nodes[closest_word])
+        self.add_node(line, f'line_{word}_{closest_word}')
 
     def guess(self, word):
         state = self.backend.validate(word)
@@ -116,7 +133,7 @@ class Gui(QWidget):
 
             else:
                 self.backend.display_valid_feedback(word, best_score)
-                self.successful_guess(word)
+                self.successful_guess(word, closest_word)
 
                 if self.backend.is_target(word):
                     self.backend.win()
