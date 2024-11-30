@@ -70,6 +70,15 @@ class StaticText(QGraphicsTextItem):
 
 
 class Gui(QWidget):
+
+    class AutoCenterButton(QPushButton):
+        def __init__(self, label: str, parent: QWidget):
+            super().__init__(label, parent)
+            self.clicked.connect()
+        
+        def toggle(self):
+            self.parent.autocenterflag = not self.parent.autocenterflag
+
     def __init__(self, debug=False):
         super().__init__()
 
@@ -85,11 +94,13 @@ class Gui(QWidget):
         self.view.setMouseTracking(True)
         self.view.setRenderHint(QPainter.Antialiasing)
 
-        # text input
+        # interface
         self.textbox = QLineEdit()
         self.textbox.setFixedHeight(HEIGHT / 5)
         self.textbox.setPlaceholderText("Enter your guess: ")
         self.textbox.installEventFilter(self)
+
+        self.autocenterbtn = Gui.AutoCenterButton("Auto-center", self)
 
         # layout
         self.root = QVBoxLayout()
@@ -101,13 +112,14 @@ class Gui(QWidget):
         self.mouse_pos = QPointF(0, 0)
         self.items = {}
         self.origin = Node("", 0, 0, 0, 0)
+        
+        self.autocenterflag = False
 
         # backend
         self.backend = Agent(tolerance=0.0)
         self.backend.init_core()
 
-        self.add_node(self.backend.start)
-        # self.center_on(self.items[self.backend.start])
+        self.add_node(self.backend.start, center=True)
 
         # debug
         self.debug = debug
@@ -136,15 +148,19 @@ class Gui(QWidget):
         colour = (int(255 * red_val), int(255 * green_val), 0, 255)
         return colour
 
-    def add_node(self, word, coords=None):
-        if coords is None:
-            pos = self.calc_pos(word)
-            colour = self.calc_colour(word)
-            node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE, colour)
-        else:
-            node = Node(word, *coords)
+    def _add_node(self, word, pos):
+        colour = self.calc_colour(word)
+        node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE, colour)
         self.add_item(node, word)
-        self.center_on(node)
+        return node
+
+    def add_node(self, word, center=False, coords=None):
+        if coords is None:
+            coords = self.calc_pos(word)
+        node = self._add_node(word, coords)
+
+        if center:
+            self.center_on(node)
     
     def add_line(self, word1, word2):
         label = f'line_{word1}_{word2}'
@@ -167,7 +183,7 @@ class Gui(QWidget):
         self.display_text.update(message)
 
     def successful_guess(self, word, closest_word):
-        self.add_node(word)
+        self.add_node(word, self.center_flag)
         self.add_line(word, closest_word)
         self.display_text.clear()
 
@@ -181,6 +197,7 @@ class Gui(QWidget):
             self.display(message)
         self.textbox.clear()
 
+    # Events
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
             self.handle_mouse_move(event)
@@ -216,7 +233,8 @@ class Gui(QWidget):
         if event.key() == Qt.Key_Return:
             text = self.textbox.text()
             self.guess(text)
-
+    
+    # Settings
 
 if __name__ == '__main__':
     app = QApplication([])
