@@ -1,11 +1,15 @@
 from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
 
+from sklearn.manifold import TSNE
+
 import random
 import numpy as np
 
 from config import *
 from utils import *
+
+import json
 
 
 class Agent:
@@ -15,6 +19,9 @@ class Agent:
         self.vocab_set = set(self.vocab)
         self.dictionary = self.load_words()
 
+        self.embedding = self.train_embedding()
+        self.save_embedding(model_name)
+
         self.tolerance = tolerance
 
         self.start = None
@@ -22,7 +29,7 @@ class Agent:
 
         self.guesses = []
         self.guesses_set = set()
-    
+
     def load_model(self, model_name):
         path = f"{DIR_PATH}/models/{model_name}/{model_name}.model"
         try:
@@ -35,6 +42,23 @@ class Agent:
     
     def load_words(self):
         return open(f"{DIR_PATH}/datasets/words/en.txt", 'r').read().split('\n')
+
+    def train_embedding(self):
+        vectors = np.array(self.model.wv.vectors)
+        tsne = TSNE(n_components=2, random_state=0)
+        raw = tsne.fit_transform(vectors).tolist()
+        self.embedding = {word: val for word, val in zip(self.vocab, raw)}
+    
+    def save_embedding(self, model_name):
+        path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
+        f = open(path, 'w')
+        data = json.dumps(self.embedding)
+        f.write(data)
+
+    def load_embedding(self, model_name):
+        path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
+        f = open(path, 'r')
+        return json.load(f)
 
     def get_random_word(self):
         return random.choice(self.vocab)
@@ -68,6 +92,9 @@ class Agent:
     
     def get_similarity(self, w1, w2):
         return self.model.wv.similarity(w1, w2)
+    
+    def get_2d(self, word):
+        return self.embedding[word]
     
     def get_closest_word_and_score(self, word):
         """
@@ -126,13 +153,6 @@ class Agent:
 
     def get_column(self, arr, axis=0):
         return [item[axis] for item in arr]
-
-    def init_core(self):
-        self.start = self.find_valid_word()
-        self.target = self.find_valid_word()
-        print(f"Starting word: {self.start}")
-        print(f"Target word: {self.target}\n")
-        self.add_word(self.start)
     
     def validate(self, guess):
         if not self.validate_word(guess):
@@ -150,6 +170,7 @@ class Agent:
         
         else:
             best_word, best_score = self.get_closest_word_and_score(guess)
+            print(self.get_2d(guess))
 
             if self.validate_score(best_score):
                 self.add_word(guess)
@@ -162,6 +183,13 @@ class Agent:
                 self.display_unsimilar_feedback(best_word, best_score)
                 self.display_hints(guess)
 
+    def init_core(self):
+        self.start = self.find_valid_word()
+        self.target = self.find_valid_word()
+        print(f"Starting word: {self.start}")
+        print(f"Target word: {self.target}\n")
+        self.add_word(self.start)
+
     def main(self):
         self.init_core()
 
@@ -172,5 +200,5 @@ class Agent:
 
 
 if __name__ == '__main__':
-    game = Agent('googlenews', tolerance=0.35)
+    game = Agent('v1', tolerance=0.3)
     game.main()
