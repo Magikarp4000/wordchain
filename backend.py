@@ -19,6 +19,7 @@ class Agent:
         self.vocab_set = set(self.vocab)
         self.dictionary = self.load_words()
 
+        self.embedding = self.load_embedding(model_name)
         # self.embedding = self.train_embedding()
         # self.save_embedding(model_name)
 
@@ -59,7 +60,8 @@ class Agent:
     def load_embedding(self, model_name):
         path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
         f = open(path, 'r')
-        return json.load(f)
+        data = json.load(f)
+        return {word: np.array(data[word]) for word in data}
 
     def get_random_word(self):
         return random.choice(self.vocab)
@@ -96,6 +98,9 @@ class Agent:
     
     def get_2d(self, word):
         return self.embedding[word]
+    
+    def get_2d_similarity(self, w1, w2):
+        return np.linalg.norm(self.embedding[w1] - self.embedding[w2])
     
     def get_closest_word_and_score(self, word):
         """

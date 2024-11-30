@@ -95,25 +95,34 @@ class Gui(QWidget):
 
         # state
         self.mouse_pos = QPointF(0, 0)
-        self.nodes = {}
+        self.items = {}
 
         # backend
         self.backend = Agent(tolerance=0.3)
         self.backend.init_core()
 
-        node = Node(self.backend.start, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
-        self.add_node(node, self.backend.start)
+        self.add_node(self.backend.start)
     
     def get_random_pos(self):
         return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
 
-    def add_node(self, node, label):
-        self.nodes[label] = node
-        self.scene.addItem(node)
+    def add_item(self, item, key):
+        self.items[key] = item
+        self.scene.addItem(item)
 
-    def move_all_nodes(self, dx, dy):
-        for node in self.nodes.values():
-            node.moveBy(dx, dy)
+    def add_node(self, word):
+        pos = self.backend.get_2d(word)
+        node = Node(word, *pos, NODE_SIZE, NODE_SIZE)
+        self.add_item(node, word)
+    
+    def add_line(self, word1, word2):
+        label = f'line_{word1}_{word2}'
+        line = Line(self.items[word1], self.items[word2])
+        self.add_item(line, label)
+
+    def move_all_items(self, dx, dy):
+        for item in self.items.values():
+            item.moveBy(dx, dy)
     
     def delta_mouse_pos(self, new_pos):
         return new_pos - self.mouse_pos
@@ -124,7 +133,7 @@ class Gui(QWidget):
         self.mouse_pos = new_pos
 
         if event.buttons() == Qt.MouseButton.LeftButton:
-            self.move_all_nodes(dpos.x(), dpos.y())
+            self.move_all_items(dpos.x(), dpos.y())
     
     def handle_key_press(self, event: QKeyEvent):
         if event.key() == Qt.Key_Return:
@@ -135,21 +144,15 @@ class Gui(QWidget):
         self.display_text.update(message)
 
     def successful_guess(self, word, closest_word):
-        self.backend.add_word(word)
-
-        node = Node(word, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
-        self.add_node(node, word)
-        
-        line = Line(self.nodes[closest_word], self.nodes[word])
-        self.add_node(line, f'line_{word}_{closest_word}')
+        self.add_node(word)
+        self.add_line(word, closest_word)
 
     def guess(self, word):
         state, message = self.backend.update(word)
-        if state == VALID:
-            self.successful_guess(word, message)
-        elif state == WON:
-            self.successful_guess(word, message)
-            self.backend.win()
+        if state == VALID or state == WON:
+            self.successful_guess(word, message)            
+            if state == WON:
+                self.backend.win()
         else:
             self.display(message)
         self.textbox.clear()
@@ -163,11 +166,11 @@ class Gui(QWidget):
         
         # Debug
         elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
-            for label in self.nodes:
-                if type(self.nodes[label]) is Line:
-                    print(label, self.nodes[label].line())
+            for label in self.items:
+                if type(self.items[label]) is Line:
+                    print(label, self.items[label].line())
                 else:
-                    print(label, self.nodes[label].pos().x(), self.nodes[label].pos().y())
+                    print(label, self.items[label].pos().x(), self.items[label].pos().y())
 
         return QMainWindow.eventFilter(self, source, event) 
 
