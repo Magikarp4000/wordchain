@@ -16,7 +16,6 @@ class Agent:
 
     class Bounds:
         def __init__(self, arr: np.array):
-            print(arr)
             self.minX = min(arr[:, 0])
             self.maxX = max(arr[:, 0])
             self.minY = min(arr[:, 1])
@@ -197,7 +196,6 @@ class Agent:
             return GUESSED, self.get_guessed_feedback()
         else:
             best_word, best_score = self.get_closest_word_and_score(guess)
-            # print(self.get_2d(guess))
 
             if self.validate_score(best_score):
                 self.add_word(guess)
@@ -212,8 +210,6 @@ class Agent:
     def init_core(self):
         self.start = self.find_valid_word()
         self.target = self.find_valid_word()
-        print(f"Starting word: {self.start}")
-        print(f"Target word: {self.target}\n")
         self.add_word(self.start)
 
     def main(self):

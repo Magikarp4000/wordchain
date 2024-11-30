@@ -33,10 +33,7 @@ class Node(QGraphicsEllipseItem):
         # circle
         scenePos = self.mapToScene(x, y)
         self.setPos(scenePos)
-        try:
-            colour = QRgba64.fromRgba(*colour)
-        except OverflowError:
-            print(colour)
+        colour = QRgba64.fromRgba(*colour)
         self.setBrush(QBrush(colour))
 
         # label
@@ -73,8 +70,11 @@ class StaticText(QGraphicsTextItem):
 
 
 class Gui(QWidget):
-    def __init__(self):
+    def __init__(self, debug=False):
         super().__init__()
+
+        # debug
+        self.debug = debug
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
@@ -108,9 +108,12 @@ class Gui(QWidget):
         # backend
         self.backend = Agent(tolerance=0.0)
         self.backend.init_core()
-        print(self.backend.bounds)
 
         self.add_node(self.backend.start)
+
+        if self.debug:
+            print(f"Start word: {self.backend.start}")
+            print(f"Target word: {self.backend.target}\n")
     
     def add_item(self, item, key):
         self.items[key] = item
@@ -130,7 +133,6 @@ class Gui(QWidget):
         sim = self.backend.get_similarity_to_target(word)
         green_val = self.backend.norm_similarity(sim)
         red_val = 1 - green_val
-        print("green red:", green_val, red_val)
         colour = (int(255 * red_val), int(255 * green_val), 0, 255)
         return colour
 
@@ -172,7 +174,6 @@ class Gui(QWidget):
         self.textbox.clear()
 
     def eventFilter(self, source, event: QEvent):
-        # print(event)
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
             self.handle_mouse_move(event)
         elif (event.type() == QEvent.KeyPress):
@@ -180,11 +181,15 @@ class Gui(QWidget):
         
         # Debug
         elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
-            for label in self.items:
-                if type(self.items[label]) is Line:
-                    print(label, self.items[label].line())
-                else:
-                    print(label, self.items[label].pos().x(), self.items[label].pos().y())
+            try:
+                if self.debug:
+                    for label in self.items:
+                        if type(self.items[label]) is Line:
+                            print(label, self.items[label].line())
+                        else:
+                            print(label, self.items[label].pos().x(), self.items[label].pos().y())
+            except AttributeError:
+                pass
 
         return QMainWindow.eventFilter(self, source, event) 
     
