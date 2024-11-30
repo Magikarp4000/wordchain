@@ -222,5 +222,5 @@ class Agent:
 
 
 if __name__ == '__main__':
-    game = Agent('v1', tolerance=0.3)
+    game = Agent('googlenews', tolerance=0.3)
     game.main()
