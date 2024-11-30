@@ -4,7 +4,7 @@ from backend import Agent
 import random
 
 from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
-from PySide6.QtGui import QBrush, QMouseEvent, QKeyEvent, QPainter
+from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -30,18 +30,19 @@ class Node(QGraphicsEllipseItem):
     def __init__(self, text, x, y, w, h):
         super().__init__(0, 0, w, h)
         
-        self.setBrush(QBrush(Qt.red))
         scenePos = self.mapToScene(x, y)
         self.setPos(scenePos)
+        self.setBrush(QBrush(Qt.red))
 
         self.label = QGraphicsTextItem(text, self)
 
 
 class Line(QGraphicsLineItem):
-    def __init__(self, end1: Node, end2: Node, origin: Node):
+    def __init__(self, end1: Node, end2: Node):
         super().__init__()
-        center1 = end1.scenePos() + QPointF(25, 25)
-        center2 = end2.scenePos() + QPointF(25, 25)
+
+        center1 = end1.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
+        center2 = end2.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
         self.setLine(QLineF(center1, center2))
 
 
@@ -77,8 +78,7 @@ class Gui(QWidget):
         # backend
         self.backend = Agent(tolerance=0)
         self.backend.init_core()
-        self.add_node(Node('_', 0, 0, 20, 20), '_')
-        node = Node(self.backend.start, *self.get_random_pos(), 50, 50)
+        node = Node(self.backend.start, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
         self.add_node(node, self.backend.start)
     
     def get_random_pos(self):
@@ -102,7 +102,6 @@ class Gui(QWidget):
 
         if event.buttons() == Qt.MouseButton.LeftButton:
             self.move_all_nodes(dpos.x(), dpos.y())
-            # print(dpos)
     
     def handle_key_press(self, event: QKeyEvent):
         if event.key() == Qt.Key_Return:
@@ -112,10 +111,10 @@ class Gui(QWidget):
     def successful_guess(self, word, closest_word):
         self.backend.add_word(word)
 
-        node = Node(word, *self.get_random_pos(), 50, 50)
+        node = Node(word, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
         self.add_node(node, word)
         
-        line = Line(self.nodes[closest_word], self.nodes[word], self.nodes['_'])
+        line = Line(self.nodes[closest_word], self.nodes[word])
         self.add_node(line, f'line_{word}_{closest_word}')
 
     def guess(self, word):
@@ -151,15 +150,11 @@ class Gui(QWidget):
         
         # Debug
         elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
-            # self.view.eventFilter(source, event)
-            # event = QGraphicsSceneMouseEvent(event)
             for label in self.nodes:
                 if type(self.nodes[label]) is Line:
                     print(label, self.nodes[label].line())
                 else:
                     print(label, self.nodes[label].pos().x(), self.nodes[label].pos().y())
-            # print("MOUSE POS-------------------------", event.scenePos())
-            
 
         return QMainWindow.eventFilter(self, source, event) 
 
