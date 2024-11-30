@@ -30,11 +30,15 @@ class Node(QGraphicsEllipseItem):
     def __init__(self, text, x, y, w, h):
         super().__init__(0, 0, w, h)
         
+        # circle
         scenePos = self.mapToScene(x, y)
         self.setPos(scenePos)
         self.setBrush(QBrush(Qt.red))
 
+        # label
         self.label = QGraphicsTextItem(text, self)
+        offset = self.boundingRect().center() - self.label.boundingRect().center()
+        self.label.setPos(offset)
 
 
 class Line(QGraphicsLineItem):
@@ -58,7 +62,7 @@ class Gui(QWidget):
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)
-        self.scene.setSceneRect(0, 0, WIDTH, HEIGHT)
+        # self.scene.setSceneRect(0, 0, WIDTH, HEIGHT)
         # view
         self.view = QGraphicsView(self.scene)
         self.view.viewport().installEventFilter(self)
@@ -73,8 +77,8 @@ class Gui(QWidget):
 
         # layout
         self.root = QVBoxLayout()
-        self.root.addWidget(self.textbox)
         self.root.addWidget(self.view)
+        self.root.addWidget(self.textbox)
         self.setLayout(self.root)
 
         # backend
