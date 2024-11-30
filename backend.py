@@ -47,7 +47,8 @@ class Agent:
         vectors = np.array(self.model.wv.vectors)
         tsne = TSNE(n_components=2, random_state=0)
         raw = tsne.fit_transform(vectors).tolist()
-        self.embedding = {word: val for word, val in zip(self.vocab, raw)}
+        embedding = {word: val for word, val in zip(self.vocab, raw)}
+        return embedding
     
     def save_embedding(self, model_name):
         path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
