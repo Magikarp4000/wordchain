@@ -40,7 +40,7 @@ class Gui(QWidget):
 
         # backend
         self.backend = Agent()
-        self.backend.init_main()
+        self.backend.init_core()
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)

@@ -127,9 +127,7 @@ class Agent:
     def get_column(self, arr, axis=0):
         return [item[axis] for item in arr]
 
-    def init_main(self):
-        self.running = True
-
+    def init_core(self):
         self.start = self.find_valid_word()
         self.target = self.find_valid_word()
         print(f"Starting word: {self.start}")
@@ -165,8 +163,9 @@ class Agent:
                 self.display_hints(guess)
 
     def main(self):
-        self.init_main()
+        self.init_core()
 
+        self.running = True
         while self.running:
             guess = self.get_input()
             self.update(guess)
