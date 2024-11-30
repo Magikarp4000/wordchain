@@ -29,7 +29,7 @@ class Node(QGraphicsEllipseItem):
     def __init__(self, text, x, y, w, h):
         super().__init__(x, y, w, h)
         self.setBrush(QBrush(Qt.red))
-        # self.setPos(x, y)
+        self.setPos(x, y)
         print(x, y)
 
         self.label = QGraphicsTextItem(text, self)
@@ -38,11 +38,12 @@ class Node(QGraphicsEllipseItem):
 
 class Line(QGraphicsLineItem):
     def __init__(self, end1: Node, end2: Node):
-        pos = (end1.rect().x(), end1.rect().y(), end2.rect().x(), end2.rect().y())
-        print(pos)
-        super().__init__(*pos)
-        # self.setPos(end2.x(), end2.y())
-
+        # pos = (end1.x(), end1.y(), end2.x(), end2.y())
+        # print(pos)
+        super().__init__()
+        print(end1.rect())
+        self.setPos(end1.x() + 25, end1.y() + 25)
+        self.setLine(end1.x(), end1.y(), end2.x() + (end2.x() - end1.x()), end2.y() + (end2.y() - end1.y()))
 
 class Gui(QWidget):
     def __init__(self):
@@ -76,6 +77,7 @@ class Gui(QWidget):
         # backend
         self.backend = Agent(tolerance=0)
         self.backend.init_core()
+        self.add_node(Node('_', 0, 0, 20, 20), '_')
         node = Node(self.backend.start, *self.get_random_pos(), 50, 50)
         self.add_node(node, self.backend.start)
     
@@ -132,7 +134,7 @@ class Gui(QWidget):
                 self.backend.display_unsimilar_feedback(closest_word, best_score)
 
             else:
-                self.backend.display_valid_feedback(word, best_score)
+                self.backend.display_valid_feedback(word, best_score, closest_word)
                 self.successful_guess(word, closest_word)
 
                 if self.backend.is_target(word):
@@ -145,6 +147,13 @@ class Gui(QWidget):
             self.handle_mouse_move(event)
         elif (event.type() == QEvent.KeyPress):
             self.handle_key_press(event)
+        # Debug
+        elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
+            for label in self.nodes:
+                if type(self.nodes[label]) is Line:
+                    print(label, self.nodes[label].line())
+                else:
+                    print(label, self.nodes[label].pos())
 
         return QMainWindow.eventFilter(self, source, event)
 

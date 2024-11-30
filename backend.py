@@ -19,8 +19,8 @@ class Agent:
         self.vocab_set = set(self.vocab)
         self.dictionary = self.load_words()
 
-        self.embedding = self.train_embedding()
-        self.save_embedding(model_name)
+        # self.embedding = self.train_embedding()
+        # self.save_embedding(model_name)
 
         self.tolerance = tolerance
 
@@ -121,9 +121,9 @@ class Agent:
     def win(self):
         print(f"Congratulations! You chained from '{self.start}' to '{self.target}' in {len(self.guesses) - 1} guesses!")
 
-    def display_valid_feedback(self, word, best_score=None):
+    def display_valid_feedback(self, word, best_score=None, best_word=None):
         print(f"Nice job! '{word}' has been added to the chain.")
-        print(f"DEBUG: {round(best_score * 100, 2)}%\n")
+        print(f"DEBUG: {best_word} {round(best_score * 100, 2)}%\n")
     
     def display_unsimilar_feedback(self, best_word, best_score):
         percent = round(best_score * 100, 2)
@@ -170,11 +170,11 @@ class Agent:
         
         else:
             best_word, best_score = self.get_closest_word_and_score(guess)
-            print(self.get_2d(guess))
+            # print(self.get_2d(guess))
 
             if self.validate_score(best_score):
                 self.add_word(guess)
-                self.display_valid_feedback(guess, best_score)
+                self.display_valid_feedback(guess, best_score, best_word)
 
                 if self.is_target(guess):
                     self.win()
