@@ -61,7 +61,7 @@ class Gui(QWidget):
         self.nodes = {}
 
         # scene
-        self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)
+        self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
         # self.scene.setSceneRect(0, 0, WIDTH, HEIGHT)
         # view
         self.view = QGraphicsView(self.scene)
