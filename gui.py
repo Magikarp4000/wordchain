@@ -63,6 +63,9 @@ class StaticText(QGraphicsTextItem):
     def update(self, text):
         self.setPlainText(text)
         self.setPos(self.base_pos - self.boundingRect().center())
+    
+    def clear(self):
+        self.update("")
 
 
 class Gui(QWidget):
@@ -112,6 +115,7 @@ class Gui(QWidget):
 
     def add_node(self, word):
         pos = self.backend.get_2d(word)
+        print(f"\n{word}: {pos}\n")
         node = Node(word, *pos, NODE_SIZE, NODE_SIZE)
         self.add_item(node, word)
     
@@ -146,6 +150,7 @@ class Gui(QWidget):
     def successful_guess(self, word, closest_word):
         self.add_node(word)
         self.add_line(word, closest_word)
+        self.display_text.clear()
 
     def guess(self, word):
         state, message = self.backend.update(word)
