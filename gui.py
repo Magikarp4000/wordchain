@@ -53,12 +53,27 @@ class Line(QGraphicsLineItem):
         self.setZValue(-1)
 
 
+class StaticText(QGraphicsTextItem):
+    def __init__(self, text, x, y, *args, **kwargs):
+        super().__init__(text, *args, **kwargs)
+        self.base_pos = QPointF(x, y)
+        self.setPos(self.base_pos)
+        self.setZValue(1)
+
+    def update(self, text):
+        self.setPlainText(text)
+        self.setPos(self.base_pos - self.boundingRect().center())
+
+
 class Gui(QWidget):
     def __init__(self):
         super().__init__()
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
+
+        self.display_text = StaticText("", WIDTH / 2, 4 * HEIGHT / 5 - DISPLAY_TEXT_PAD)
+        self.scene.addItem(self.display_text)
 
         # view
         self.view = QGraphicsView(self.scene)
@@ -85,6 +100,7 @@ class Gui(QWidget):
         # backend
         self.backend = Agent(tolerance=0.3)
         self.backend.init_core()
+
         node = Node(self.backend.start, *self.get_random_pos(), NODE_SIZE, NODE_SIZE)
         self.add_node(node, self.backend.start)
     
@@ -115,6 +131,9 @@ class Gui(QWidget):
             text = self.textbox.text()
             self.guess(text)
     
+    def display(self, message):
+        self.display_text.update(message)
+
     def successful_guess(self, word, closest_word):
         self.backend.add_word(word)
 
@@ -125,27 +144,14 @@ class Gui(QWidget):
         self.add_node(line, f'line_{word}_{closest_word}')
 
     def guess(self, word):
-        state = self.backend.validate(word)
-
-        if state == INVALID:
-            self.backend.display_invalid_feedback()
-        
-        elif state == GUESSED:
-            self.backend.display_guessed_feedback()
-        
-        elif state == VALID:
-            closest_word, best_score = self.backend.get_closest_word_and_score(word)
-
-            if not self.backend.validate_score(best_score):
-                self.backend.display_unsimilar_feedback(closest_word, best_score)
-
-            else:
-                self.backend.display_valid_feedback(word, best_score, closest_word)
-                self.successful_guess(word, closest_word)
-
-                if self.backend.is_target(word):
-                    self.backend.win()
-        
+        state, message = self.backend.update(word)
+        if state == VALID:
+            self.successful_guess(word, message)
+        elif state == WON:
+            self.successful_guess(word, message)
+            self.backend.win()
+        else:
+            self.display(message)
         self.textbox.clear()
 
     def eventFilter(self, source, event: QEvent):

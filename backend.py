@@ -122,19 +122,28 @@ class Agent:
     def win(self):
         print(f"Congratulations! You chained from '{self.start}' to '{self.target}' in {len(self.guesses) - 1} guesses!")
 
+    def get_invalid_feedback(self):
+        return "Sorry, that word is invalid. Please try again."
+    
+    def get_guessed_feedback(self):
+        return "That word has already been guessed! Please try again."
+    
+    def get_unsimilar_feedback(self, best_word, best_score):
+        percent = round(best_score * 100, 2)
+        return f"Sorry, the closest word found is '{best_word}' with a similarity score of {percent}%. Please try again."
+
+    def display_invalid_feedback(self):
+        print(self.get_invalid_feedback() + "\n")
+    
+    def display_guessed_feedback(self):
+        print(self.get_guessed_feedback() + "\n")
+    
+    def display_unsimilar_feedback(self, best_word, best_score):
+        print(self.get_unsimilar_feedback(best_word, best_score) + "\n")
+    
     def display_valid_feedback(self, word, best_score=None, best_word=None):
         print(f"Nice job! '{word}' has been added to the chain.")
         print(f"DEBUG: {best_word} {round(best_score * 100, 2)}%\n")
-    
-    def display_unsimilar_feedback(self, best_word, best_score):
-        percent = round(best_score * 100, 2)
-        print(f"Sorry, the closest word found is '{best_word}' with a similarity score of {percent}%, which is below the threshold. Please try again.\n")
-
-    def display_invalid_feedback(self):
-        print("Sorry, that word is invalid. Please try again.\n")
-    
-    def display_guessed_feedback(self):
-        print("That word has already been guessed! Please try again.\n")
 
     def display_hints(self, word):
         hints = self.get_hints(word)
@@ -155,33 +164,23 @@ class Agent:
     def get_column(self, arr, axis=0):
         return [item[axis] for item in arr]
     
-    def validate(self, guess):
-        if not self.validate_word(guess):
-            return INVALID
-        if self.guessed(guess):
-            return GUESSED
-        return VALID
-    
     def update(self, guess):
         if not self.validate_word(guess):
-            self.display_invalid_feedback()
-        
+            return INVALID, self.get_invalid_feedback()
         elif self.guessed(guess):
-            self.display_guessed_feedback()
-        
+            return GUESSED, self.get_guessed_feedback()
         else:
             best_word, best_score = self.get_closest_word_and_score(guess)
             # print(self.get_2d(guess))
 
             if self.validate_score(best_score):
                 self.add_word(guess)
-                self.display_valid_feedback(guess, best_score, best_word)
-
                 if self.is_target(guess):
-                    self.win()
-                    self.running = False
+                    return WON, best_word
+                else:
+                    return VALID, best_word
             else:
-                self.display_unsimilar_feedback(best_word, best_score)
+                return UNSIMILAR, self.get_unsimilar_feedback(best_word, best_score)
                 self.display_hints(guess)
 
     def init_core(self):
