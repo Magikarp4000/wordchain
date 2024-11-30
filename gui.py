@@ -1,4 +1,5 @@
 from config import *
+from backend import Agent
 
 import random
 
@@ -36,6 +37,10 @@ class Node(QGraphicsEllipseItem):
 class Gui(QWidget):
     def __init__(self):
         super().__init__()
+
+        # backend
+        self.backend = Agent()
+        self.backend.init_main()
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, HEIGHT)
@@ -86,12 +91,34 @@ class Gui(QWidget):
             print(dpos)
     
     def handle_key_press(self, event: QKeyEvent):
-        text = self.textbox.text()
         if event.key() == Qt.Key_Return:
-            node = Node(text, *self.get_random_pos(), 50, 50)
-            self.add_node(node)
-            self.textbox.clear()
-            print(node)
+            text = self.textbox.text()
+            self.guess(text)
+    
+    def successful_guess(self, word):
+        node = Node(word, *self.get_random_pos(), 50, 50)
+        self.add_node(node)
+        self.textbox.clear()
+
+    def guess(self, word):
+        state = self.backend.validate(word)
+
+        if state == INVALID:
+            self.backend.display_invalid_feedback()
+        
+        elif state == GUESSED:
+            self.backend.display_guessed_feedback()
+        
+        elif state == VALID:
+            best_word, best_score = self.backend.get_closest_word_and_score(word)
+
+            if not self.backend.validate_score(best_score):
+                self.backend.display_unsimilar_feedback(best_word, best_score)
+            else:
+                self.backend.display_valid_feedback(word, best_score)
+                self.successful_guess(word)
+                if self.backend.is_target(word):
+                    self.backend.win()
 
     def eventFilter(self, source, event: QEvent):
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
@@ -100,6 +127,9 @@ class Gui(QWidget):
             self.handle_key_press(event)
 
         return QMainWindow.eventFilter(self, source, event)
+
+
+
 
 
 if __name__ == '__main__':

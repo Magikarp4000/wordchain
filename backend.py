@@ -4,10 +4,11 @@ from gensim.models import KeyedVectors
 import random
 import numpy as np
 
+from config import *
 from utils import *
 
 
-class Backend:
+class Agent:
     def __init__(self, model_name='v1', tolerance=0.3):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
@@ -69,6 +70,10 @@ class Backend:
         return self.model.wv.similarity(w1, w2)
     
     def get_closest_word_and_score(self, word):
+        """
+        Return:
+            tuple(str, float): (best word, best score)
+        """
         sims = [self.get_similarity(word, guess) for guess in self.guesses]
         best_index = np.argmax(sims)
         return self.guesses[best_index], sims[best_index]
@@ -76,8 +81,8 @@ class Backend:
     def validate_score(self, score):
         return score >= self.tolerance
     
-    def is_target(self, word, target):
-        return word == target
+    def is_target(self, word):
+        return word == self.target
 
     def guessed(self, word):
         return word in self.guesses_set
@@ -123,11 +128,20 @@ class Backend:
         return [item[axis] for item in arr]
 
     def init_main(self):
+        self.running = True
+
         self.start = self.find_valid_word()
         self.target = self.find_valid_word()
         print(f"Starting word: {self.start}")
         print(f"Target word: {self.target}\n")
         self.add_word(self.start)
+    
+    def validate(self, guess):
+        if not self.validate_word(guess):
+            return INVALID
+        if self.guessed(guess):
+            return GUESSED
+        return VALID
     
     def update(self, guess):
         if not self.validate_word(guess):
@@ -143,9 +157,9 @@ class Backend:
                 self.add_word(guess)
                 self.display_valid_feedback(guess, best_score)
 
-                if self.is_target(guess, self.target):
+                if self.is_target(guess):
                     self.win()
-                    running = False
+                    self.running = False
             else:
                 self.display_unsimilar_feedback(best_word, best_score)
                 self.display_hints(guess)
@@ -153,12 +167,11 @@ class Backend:
     def main(self):
         self.init_main()
 
-        running = True
-        while running:
+        while self.running:
             guess = self.get_input()
             self.update(guess)
 
 
 if __name__ == '__main__':
-    game = Backend('googlenews', tolerance=0.35)
+    game = Agent('googlenews', tolerance=0.35)
     game.main()
