@@ -70,15 +70,6 @@ class StaticText(QGraphicsTextItem):
 
 
 class Gui(QWidget):
-
-    class AutoCenterButton(QPushButton):
-        def __init__(self, label: str, parent: QWidget):
-            super().__init__(label, parent)
-            self.clicked.connect()
-        
-        def toggle(self):
-            self.parent.autocenterflag = not self.parent.autocenterflag
-
     def __init__(self, debug=False):
         super().__init__()
 
@@ -100,12 +91,14 @@ class Gui(QWidget):
         self.textbox.setPlaceholderText("Enter your guess: ")
         self.textbox.installEventFilter(self)
 
-        self.autocenterbtn = Gui.AutoCenterButton("Auto-center", self)
+        self.autocenterbtn = QPushButton("Auto-center")
+        self.autocenterbtn.clicked.connect(self.toggle_autocenter)
 
         # layout
         self.root = QVBoxLayout()
         self.root.addWidget(self.view)
         self.root.addWidget(self.textbox)
+        self.root.addWidget(self.autocenterbtn)
         self.setLayout(self.root)
 
         # state
@@ -119,7 +112,8 @@ class Gui(QWidget):
         self.backend = Agent(tolerance=0.0)
         self.backend.init_core()
 
-        self.add_node(self.backend.start, center=True)
+        start_node = self.add_node(self.backend.start, center=True)
+        self.prev_node = start_node
 
         # debug
         self.debug = debug
@@ -158,14 +152,19 @@ class Gui(QWidget):
         if coords is None:
             coords = self.calc_pos(word)
         node = self._add_node(word, coords)
+        self.prev_node = node
 
         if center:
             self.center_on(node)
+        
+        return node
     
     def add_line(self, word1, word2):
         label = f'line_{word1}_{word2}'
         line = Line(self.items[word1], self.items[word2])
         self.add_item(line, label)
+
+        return line
 
     def move_all_items(self, dx, dy):
         self.origin.moveBy(dx, dy)
@@ -183,7 +182,7 @@ class Gui(QWidget):
         self.display_text.update(message)
 
     def successful_guess(self, word, closest_word):
-        self.add_node(word, self.center_flag)
+        self.add_node(word, self.autocenterflag)
         self.add_line(word, closest_word)
         self.display_text.clear()
 
@@ -235,6 +234,10 @@ class Gui(QWidget):
             self.guess(text)
     
     # Settings
+    def toggle_autocenter(self):
+        self.autocenterflag = not self.autocenterflag
+        if self.autocenterflag:
+            self.center_on(self.prev_node)
 
 if __name__ == '__main__':
     app = QApplication([])
