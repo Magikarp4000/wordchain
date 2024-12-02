@@ -2,6 +2,7 @@ from config import *
 from backend import Agent
 
 import random
+import math
 
 from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
 from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter, QRgba64
@@ -111,10 +112,10 @@ class Gui(QWidget):
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(model_name=model_name, tolerance=0.3, algo='default')
+        self.backend = Agent(model_name=model_name, tolerance=0.26, algo='default')
         self.backend.init_core()
 
-        start_node = self.add_node(self.backend.start, center=True)
+        start_node = self.add_node(self.backend.start, center_flag=True, coords=QPointF(0, 0))
         self.prev_node = start_node
 
         # debug
@@ -129,15 +130,25 @@ class Gui(QWidget):
         self.items[key] = item
         self.scene.addItem(item)
     
-    def get_random_pos(self):
+    def random_pos(self):
         return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
+    
+    def random_dir(self):
+        theta = random.uniform(0, 2 * math.pi)
+        return QPointF(math.cos(theta), math.sin(theta))
 
-    def calc_pos(self, word):
-        # raw_pos = self.backend.get_2d(word)
-        # norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
-        # offset = self.origin.scenePos()
-        # pos = QPointF(*norm_pos) + offset
-        pos = QPointF(*self.get_random_pos())
+    def calc_pos(self, word, closest_word):
+        score = self.backend.get_similarity(word, closest_word, adjust=True)
+        line_len = max(MIN_LINE_LENGTH, (SIM_CUTOFF - score) * MAX_LINE_LENGTH)
+        line_vec = line_len * self.random_dir()
+        pos = self.items[closest_word].pos() + line_vec
+        return pos
+
+    def calc_pos_2d(self, word):
+        raw_pos = self.backend.get_2d(word)
+        norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
+        offset = self.origin.scenePos()
+        pos = QPointF(*norm_pos) + offset
         return pos
 
     def calc_colour(self, word):
@@ -152,13 +163,13 @@ class Gui(QWidget):
         self.add_item(node, word)
         return node
 
-    def add_node(self, word, center=False, coords=None):
+    def add_node(self, word, closest_word=None, center_flag=False, coords=None):
         if coords is None:
-            coords = self.calc_pos(word)
+            coords = self.calc_pos(word, closest_word)
         node = self._add_node(word, coords)
         self.prev_node = node
 
-        if center:
+        if center_flag:
             self.center_on(node)
         
         return node
@@ -186,7 +197,7 @@ class Gui(QWidget):
         self.display_text.update(message)
 
     def successful_guess(self, word, closest_word):
-        self.add_node(word, self.autocenterflag)
+        self.add_node(word, closest_word, center_flag=self.autocenterflag)
         self.add_line(word, closest_word)
         self.display_text.clear()
 
@@ -194,6 +205,11 @@ class Gui(QWidget):
         state, message = self.backend.update(word)
         if state == VALID or state == WON:
             self.successful_guess(word, message)
+
+            # Debug
+            if self.debug:
+                print(f"Similarity: {self.backend.get_similarity(word, message, adjust=True)}")
+            
             if state == WON:
                 self.backend.win()
         else:

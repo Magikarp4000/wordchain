@@ -47,7 +47,7 @@ class Agent:
         self.guesses_set = set()
 
         self.algos = {
-            'default': self.get_similarity,
+            'default': self.get_cosine_similarity,
             '2d': self.get_2d_similarity,
         }
         self.algo = self.algos[algo]
@@ -120,7 +120,7 @@ class Agent:
     def norm_cosine_similarity(self, sim):
         return (sim + 1) / 2
     
-    def get_similarity(self, w1, w2):
+    def get_cosine_similarity(self, w1, w2):
         sim = self.model.wv.similarity(w1, w2)
         return self.norm_cosine_similarity(sim)
 
@@ -128,6 +128,12 @@ class Agent:
         v = self.get_2d(w1) - self.get_2d(w2)
         dist = np.linalg.norm(v) / self.bounds.maxDist
         return 1 - dist
+    
+    def get_similarity(self, w1, w2, adjust=False):
+        sim = self.algo(w1, w2)
+        if adjust:
+            return self.adjust(sim)
+        return sim
     
     def adjust(self, sim):
         return np.power(sim, 3)
