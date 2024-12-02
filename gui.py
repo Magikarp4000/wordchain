@@ -112,7 +112,7 @@ class Gui(QWidget):
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(model_name=model_name, tolerance=0.26, algo='default')
+        self.backend = Agent(model_name=model_name, tolerance=0.25, algo='default')
         self.backend.init_core()
 
         start_node = self.add_node(self.backend.start, center_flag=True, coords=QPointF(0, 0))
@@ -136,10 +136,15 @@ class Gui(QWidget):
     def random_dir(self):
         theta = random.uniform(0, 2 * math.pi)
         return QPointF(math.cos(theta), math.sin(theta))
+    
+    def norm(self, x, minX, maxX, norm_minX, norm_maxX):
+        return norm_minX + x / (maxX - minX) * (norm_maxX - norm_minX)
 
     def calc_pos(self, word, closest_word):
         score = self.backend.get_similarity(word, closest_word, adjust=True)
-        line_len = max(MIN_LINE_LENGTH, (SIM_CUTOFF - score) * MAX_LINE_LENGTH)
+        raw_len = self.norm(max(0, SIM_CUTOFF - score), 0, SIM_CUTOFF, MIN_LINE_LENGTH, MAX_LINE_LENGTH)
+        line_len = raw_len + NODE_SIZE
+        # line_len = MIN_LINE_LENGTH + NODE_SIZE
         line_vec = line_len * self.random_dir()
         pos = self.items[closest_word].pos() + line_vec
         return pos
