@@ -138,11 +138,15 @@ class Gui(QWidget):
         return QPointF(math.cos(theta), math.sin(theta))
     
     def norm(self, x, minX, maxX, norm_minX, norm_maxX):
-        return norm_minX + x / (maxX - minX) * (norm_maxX - norm_minX)
+        x = min(maxX, max(minX, x))
+        return norm_minX + (x - minX) * (norm_maxX - norm_minX) / (maxX - minX)
+    
+    def norm_colour(self, x):
+        return 1 / (1 + math.exp(-10 * (x - 0.5)))
 
     def calc_pos(self, word, closest_word):
-        score = self.backend.get_similarity(word, closest_word, adjust=True)
-        raw_len = self.norm(max(0, SIM_CUTOFF - score), 0, SIM_CUTOFF, MIN_LINE_LENGTH, MAX_LINE_LENGTH)
+        sim = self.backend.get_similarity(word, closest_word, adjust=True)
+        raw_len = self.norm(MAX_SIM_POS - sim, 0, MAX_SIM_POS, MIN_LINE_LENGTH, MAX_LINE_LENGTH)
         line_len = raw_len + NODE_SIZE
         line_vec = line_len * self.random_dir()
         pos = self.items[closest_word].pos() + line_vec
@@ -156,7 +160,10 @@ class Gui(QWidget):
         return pos
 
     def calc_colour(self, word):
-        green_val = self.backend.get_similarity_to_target(word, adjust=False)
+        raw_sim = self.backend.get_similarity_to_target(word, adjust=False)
+        sim = self.norm_colour(raw_sim)
+        print(sim)
+        green_val = self.norm(sim, MIN_SIM, MAX_SIM, 0, 1)
         red_val = 1 - green_val
         colour = (int(255 * red_val), int(255 * green_val), 0, 255)
         return colour
