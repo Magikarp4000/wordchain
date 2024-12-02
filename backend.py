@@ -167,6 +167,8 @@ class Agent:
         return "That word has already been guessed! Please try again."
     
     def get_unsimilar_feedback(self, best_word, best_score):
+        if best_score < MIN_SIM_LEVEL:
+            return f"Sorry, no similar words were found. Please try again."
         percent = round(best_score * 100, 2)
         return f"Sorry, the closest word found is '{best_word}' with a similarity score of {percent}%. Please try again."
 
