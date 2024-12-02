@@ -22,18 +22,19 @@ class Agent:
             self.maxY = max(arr[:, 1])
             self.rangeX = self.maxX - self.minX
             self.rangeY = self.maxY - self.minY
+            self.maxDist = np.linalg.norm([self.rangeX, self.rangeY])
         
         def __str__(self):
             return f"minX: {self.minX}, minY: {self.minY}, maxX: {self.maxX}, maxY: {self.maxY}, rangeX: {self.rangeX}, rangeY: {self.rangeY}"
 
-    def __init__(self, model_name='v1', tolerance=0.3):
+    def __init__(self, model_name='v1', tolerance=0.3, algo='default'):
         self.model = self.load_model(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
         self.vocab_set = set(self.vocab)
         self.dictionary = self.load_words()
 
-        self.embedding = self.load_embedding(model_name)
-        self.bounds = Agent.Bounds(np.array(list(self.embedding.values())))
+        # self.embedding = self.load_embedding(model_name)
+        # self.bounds = Agent.Bounds(np.array(list(self.embedding.values())))
         # self.embedding = self.train_embedding()
         # self.save_embedding(model_name)
 
@@ -44,6 +45,12 @@ class Agent:
 
         self.guesses = []
         self.guesses_set = set()
+
+        self.algos = {
+            'default': self.get_similarity,
+            '2d': self.get_2d_similarity,
+        }
+        self.algo = self.algos[algo]
 
     def load_model(self, model_name):
         path = f"{DIR_PATH}/models/{model_name}/{model_name}.model"
@@ -106,30 +113,36 @@ class Agent:
         except:
             return False
         return True
-    
-    def norm_similarity(self, sim):
-        return (sim + 1) / 2
 
-    def get_similarity(self, w1, w2):
-        return self.model.wv.similarity(w1, w2)
-    
     def get_2d(self, word):
         return self.embedding[word]
 
+    def norm_cosine_similarity(self, sim):
+        return (sim + 1) / 2
+    
+    def get_similarity(self, w1, w2):
+        sim = self.model.wv.similarity(w1, w2)
+        return self.norm_cosine_similarity(sim)
+
+    def get_2d_similarity(self, w1, w2):
+        v = self.get_2d(w1) - self.get_2d(w2)
+        dist = np.linalg.norm(v) / self.bounds.maxDist
+        return 1 - dist
+    
+    def adjust(self, sim):
+        return np.power(sim, 3)
+
     def norm(self, pos):
         return (pos - (self.bounds.minX, self.bounds.minY)) / (self.bounds.rangeX, self.bounds.rangeY)
-    
-    def get_2d_similarity(self, w1, w2):
-        return np.linalg.norm(self.embedding[w1] - self.embedding[w2])
     
     def get_closest_word_and_score(self, word):
         """
         Return:
             tuple(str, float): (best word, best score)
         """
-        sims = [self.get_similarity(word, guess) for guess in self.guesses]
+        sims = [self.algo(word, guess) for guess in self.guesses]
         best_index = np.argmax(sims)
-        return self.guesses[best_index], sims[best_index]
+        return self.guesses[best_index], self.adjust(sims[best_index])
     
     def validate_score(self, score):
         return score >= self.tolerance
@@ -174,11 +187,14 @@ class Agent:
         hints = self.get_hints(word)
         print(f"Hint: Try these words: {', '.join(hints)}\n")
 
-    def get_similarity_to_target(self, word):
-        return self.get_similarity(word, self.target)
+    def get_similarity_to_target(self, word, adjust=False):
+        sim = self.algo(word, self.target)
+        if adjust:
+            return self.adjust(sim)
+        return sim
     
     def get_max_similarity(self, word):
-        return max([self.get_similarity(word, guess) for guess in self.guesses])
+        return max([self.algo(word, guess) for guess in self.guesses])
 
     def get_hints(self, word):
         closest_words = self.model.wv.most_similar(positive=[word], topn=5)
@@ -222,5 +238,5 @@ class Agent:
 
 
 if __name__ == '__main__':
-    game = Agent('googlenews', tolerance=0.3)
+    game = Agent('v1', tolerance=0.3)
     game.main()

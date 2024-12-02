@@ -70,7 +70,7 @@ class StaticText(QGraphicsTextItem):
 
 
 class Gui(QWidget):
-    def __init__(self, debug=False):
+    def __init__(self, model_name='v1', debug=False, mouse_debug=False):
         super().__init__()
 
         # scene
@@ -93,12 +93,14 @@ class Gui(QWidget):
 
         self.autocenterbtn = QPushButton("Auto-center")
         self.autocenterbtn.clicked.connect(self.toggle_autocenter)
+        self.autocenterbtn.setCheckable(True)
+        self.autocenterbtn.resize(0.2 * WIDTH, 0.1 * HEIGHT)
+        self.scene.addWidget(self.autocenterbtn)
 
         # layout
         self.root = QVBoxLayout()
         self.root.addWidget(self.view)
         self.root.addWidget(self.textbox)
-        self.root.addWidget(self.autocenterbtn)
         self.setLayout(self.root)
 
         # state
@@ -109,7 +111,7 @@ class Gui(QWidget):
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(tolerance=0.0)
+        self.backend = Agent(model_name=model_name, tolerance=0.3, algo='default')
         self.backend.init_core()
 
         start_node = self.add_node(self.backend.start, center=True)
@@ -117,6 +119,8 @@ class Gui(QWidget):
 
         # debug
         self.debug = debug
+        self.mouse_debug = mouse_debug
+
         if self.debug:
             print(f"Start word: {self.backend.start}")
             print(f"Target word: {self.backend.target}\n")
@@ -129,15 +133,15 @@ class Gui(QWidget):
         return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
 
     def calc_pos(self, word):
-        raw_pos = self.backend.get_2d(word)
-        norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
-        offset = self.origin.scenePos()
-        pos = QPointF(*norm_pos) + offset
+        # raw_pos = self.backend.get_2d(word)
+        # norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
+        # offset = self.origin.scenePos()
+        # pos = QPointF(*norm_pos) + offset
+        pos = QPointF(*self.get_random_pos())
         return pos
 
     def calc_colour(self, word):
-        sim = self.backend.get_similarity_to_target(word)
-        green_val = self.backend.norm_similarity(sim)
+        green_val = self.backend.get_similarity_to_target(word, adjust=False)
         red_val = 1 - green_val
         colour = (int(255 * red_val), int(255 * green_val), 0, 255)
         return colour
@@ -189,7 +193,7 @@ class Gui(QWidget):
     def guess(self, word):
         state, message = self.backend.update(word)
         if state == VALID or state == WON:
-            self.successful_guess(word, message)            
+            self.successful_guess(word, message)
             if state == WON:
                 self.backend.win()
         else:
@@ -206,7 +210,7 @@ class Gui(QWidget):
         # Debug
         elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
             try:
-                if self.debug:
+                if self.mouse_debug:
                     for label in self.items:
                         if type(self.items[label]) is Line:
                             print(label, self.items[label].line())
@@ -241,6 +245,6 @@ class Gui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    gui = Gui()
+    gui = Gui(model_name='googlenews', debug=True)
     gui.show()
     app.exec()
