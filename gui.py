@@ -144,7 +144,6 @@ class Gui(QWidget):
         score = self.backend.get_similarity(word, closest_word, adjust=True)
         raw_len = self.norm(max(0, SIM_CUTOFF - score), 0, SIM_CUTOFF, MIN_LINE_LENGTH, MAX_LINE_LENGTH)
         line_len = raw_len + NODE_SIZE
-        # line_len = MIN_LINE_LENGTH + NODE_SIZE
         line_vec = line_len * self.random_dir()
         pos = self.items[closest_word].pos() + line_vec
         return pos
