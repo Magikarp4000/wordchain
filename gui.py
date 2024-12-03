@@ -1,11 +1,12 @@
 from config import *
+from utils import *
 from backend import Agent
 
 import random
 import math
 
 from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
-from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter, QRgba64
+from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter, QRgba64, QPixmap, QColor
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QLineEdit,
     QGraphicsSceneMouseEvent,
+    QGraphicsPixmapItem,
 )
 
 
@@ -36,6 +38,7 @@ class Node(QGraphicsEllipseItem):
         self.setPos(scenePos)
         colour = QRgba64.fromRgba(*colour)
         self.setBrush(QBrush(colour))
+        self.setPen(QColor(Qt.white))
 
         # label
         self.label = QGraphicsTextItem(text, self)
@@ -49,6 +52,7 @@ class Line(QGraphicsLineItem):
 
         center1 = end1.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
         center2 = end2.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
+        self.setPen(QColor(Qt.white))
         self.setLine(QLineF(center1, center2))
 
         self.setZValue(-1)
@@ -79,6 +83,12 @@ class Gui(QWidget):
 
         self.display_text = StaticText("", WIDTH / 2, 4 * HEIGHT / 5 - DISPLAY_TEXT_PAD)
         self.scene.addItem(self.display_text)
+
+        bkgrd_pixmap = QPixmap(f'{DIR_PATH}/assets/dark-blue-background.jpg')
+        self.bkgrd = QGraphicsPixmapItem(bkgrd_pixmap)
+        self.bkgrd.setZValue(-1000)
+        self.bkgrd.setScale(2)
+        self.scene.addItem(self.bkgrd)
 
         # view
         self.view = QGraphicsView(self.scene)
@@ -194,6 +204,7 @@ class Gui(QWidget):
 
     def move_all_items(self, dx, dy):
         self.origin.moveBy(dx, dy)
+        self.bkgrd.moveBy(dx / 10, dy / 10)
         for item in self.items.values():
             item.moveBy(dx, dy)
     
