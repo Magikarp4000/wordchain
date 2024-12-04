@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 class Node(QGraphicsEllipseItem):
     def __init__(self, text, x, y, w, h, colour=NODE_COLOUR):
         super().__init__(0, 0, w, h)
+        self.edges = set()
         
         # circle
         scenePos = self.mapToScene(x, y)
@@ -44,11 +45,21 @@ class Node(QGraphicsEllipseItem):
         self.label = QGraphicsTextItem(text, self)
         offset = self.boundingRect().center() - self.label.boundingRect().center()
         self.label.setPos(offset)
+    
+    def add_edge(self, edge):
+        self.edges.add(edge)
+    
+    def is_connected(self, edge):
+        return edge in self.edges
 
 
 class Line(QGraphicsLineItem):
     def __init__(self, end1: Node, end2: Node):
         super().__init__()
+        self.end1 = end1
+        self.end2 = end2
+        end1.add_edge(self)
+        end2.add_edge(self)
 
         center1 = end1.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
         center2 = end2.scenePos() + QPointF(NODE_SIZE / 2, NODE_SIZE / 2)
@@ -56,6 +67,14 @@ class Line(QGraphicsLineItem):
         self.setLine(QLineF(center1, center2))
 
         self.setZValue(-1)
+    
+    def is_connected(self, node):
+        return (
+            node is self.end1 or
+            node is self.end2 or
+            self.end1.is_connected(node) or
+            self.end2.is_connected(node)
+        )
 
 
 class StaticText(QGraphicsTextItem):
@@ -122,10 +141,10 @@ class Gui(QWidget):
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(model_name=model_name, tolerance=0.25, algo='default')
+        self.backend = Agent(model_name=model_name, tolerance=-0.25, algo='default')
         self.backend.init_core()
 
-        start_node = self.add_node(self.backend.start, center_flag=True, coords=QPointF(0, 0))
+        start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
         self.prev_node = start_node
 
         # debug
@@ -140,12 +159,17 @@ class Gui(QWidget):
         self.items[key] = item
         self.scene.addItem(item)
     
+    def remove_item(self, key):
+        item = self.items[key]
+        self.scene.removeItem(item)
+        self.items.pop(key)
+    
     def random_pos(self):
         return (random.randint(0, WIDTH // 2), random.randint(0, HEIGHT // 2))
     
     def random_dir(self):
         theta = random.uniform(0, 2 * math.pi)
-        return QPointF(math.cos(theta), math.sin(theta))
+        return QPointF(math.cos(theta), math.sin(theta))    
     
     def norm(self, x, minX, maxX, norm_minX, norm_maxX):
         x = min(maxX, max(minX, x))
@@ -154,14 +178,17 @@ class Gui(QWidget):
     def norm_colour(self, x):
         return 1 / (1 + math.exp(-10 * (x - 0.5)))
 
-    def calc_pos(self, word, closest_word):
+    def calc_line_len(self, word, closest_word):
         sim = self.backend.get_similarity(word, closest_word, adjust=True)
         raw_len = self.norm(MAX_SIM_POS - sim, 0, MAX_SIM_POS, MIN_LINE_LENGTH, MAX_LINE_LENGTH)
         line_len = raw_len + NODE_SIZE
+        return line_len
+    
+    def calc_pos(self, anchor, line_len):
         line_vec = line_len * self.random_dir()
-        pos = self.items[closest_word].pos() + line_vec
+        pos = self.items[anchor].pos() + line_vec
         return pos
-
+    
     def calc_pos_2d(self, word):
         raw_pos = self.backend.get_2d(word)
         norm_pos = self.backend.norm(raw_pos) * (WORLD_WIDTH, WORLD_HEIGHT)
@@ -172,35 +199,56 @@ class Gui(QWidget):
     def calc_colour(self, word):
         raw_sim = self.backend.get_similarity_to_target(word, adjust=False)
         sim = self.norm_colour(raw_sim)
-        print(sim)
         green_val = self.norm(sim, MIN_SIM, MAX_SIM, 0, 1)
         red_val = 1 - green_val
         colour = (int(255 * red_val), int(255 * green_val), 0, 255)
         return colour
 
-    def _add_node(self, word, pos):
-        colour = self.calc_colour(word)
-        node = Node(word, pos.x(), pos.y(), NODE_SIZE, NODE_SIZE, colour)
+    def _add_node(self, word, coords, colour):
+        node = Node(word, coords.x(), coords.y(), NODE_SIZE, NODE_SIZE, colour)
         self.add_item(node, word)
         return node
+    
+    def _add_line(self, word1, word2):
+        line = Line(self.items[word1], self.items[word2])
+        self.add_item(line, f'line_{word1}_{word2}')
+        return line
+    
+    def collide(self, src: QGraphicsItem):
+        for other in self.items.values():
+            if other is src or src.is_connected(other):
+                continue
+            if src.collidesWithItem(other):
+                return True
+        return False
 
-    def add_node(self, word, closest_word=None, center_flag=False, coords=None):
-        if coords is None:
-            coords = self.calc_pos(word, closest_word)
-        node = self._add_node(word, coords)
+    def add_node_no_collision(self, word, closest_word=None, coords=None):
+        colour = self.calc_colour(word)
+
+        if closest_word is None:
+            return self._add_node(word, coords, colour)
+        
+        line_len = self.calc_line_len(word, closest_word)
+        for try_num in range(MAX_TRIES):
+            pos = self.calc_pos(closest_word, line_len)
+            node = self._add_node(word, pos, colour)
+            line = self._add_line(word, closest_word)
+            
+            print(node.pos())
+            if not self.collide(node) and not self.collide(line):
+                return node
+            elif try_num + 1 < MAX_TRIES:
+                self.remove_item(word)
+                self.remove_item(f'line_{word}_{closest_word}')
+        print('exhausted')
+        return node
+
+    def add_node(self, word, closest_word=None, coords=None, center_flag=None):
+        node = self.add_node_no_collision(word, closest_word, coords)
         self.prev_node = node
-
         if center_flag:
             self.center_on(node)
-        
         return node
-    
-    def add_line(self, word1, word2):
-        label = f'line_{word1}_{word2}'
-        line = Line(self.items[word1], self.items[word2])
-        self.add_item(line, label)
-
-        return line
 
     def move_all_items(self, dx, dy):
         self.origin.moveBy(dx, dy)
@@ -220,7 +268,6 @@ class Gui(QWidget):
 
     def successful_guess(self, word, closest_word):
         self.add_node(word, closest_word, center_flag=self.autocenterflag)
-        self.add_line(word, closest_word)
         self.display_text.clear()
 
     def guess(self, word):
