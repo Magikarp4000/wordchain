@@ -141,7 +141,7 @@ class Gui(QWidget):
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(model_name=model_name, tolerance=-0.25, algo='default')
+        self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
         self.backend.init_core()
 
         start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
@@ -262,9 +262,14 @@ class Gui(QWidget):
         delta = -item.scenePos() + offset
 
         self.move_all_items(delta.x(), delta.y())
+
+    def win(self):
+        self.display_text.update("Congratulations! You won!")
+        self.display_text.setDefaultTextColor(QColor(Qt.green))
     
     def display(self, message):
         self.display_text.update(message)
+        self.display_text.setDefaultTextColor(QColor(Qt.red))
 
     def successful_guess(self, word, closest_word):
         self.add_node(word, closest_word, center_flag=self.autocenterflag)
@@ -274,13 +279,11 @@ class Gui(QWidget):
         state, message = self.backend.update(word)
         if state == VALID or state == WON:
             self.successful_guess(word, message)
-
+            if state == WON:
+                self.win()
             # Debug
             if self.debug:
                 print(f"Similarity: {self.backend.get_similarity(word, message, adjust=True)}")
-            
-            if state == WON:
-                self.backend.win()
         else:
             self.display(message)
         self.textbox.clear()
