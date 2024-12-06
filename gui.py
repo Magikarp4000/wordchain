@@ -6,7 +6,7 @@ import random
 import math
 
 from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
-from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QPainter, QRgba64, QPixmap, QColor
+from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QResizeEvent, QPainter, QRgba64, QPixmap, QColor
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QGraphicsSceneMouseEvent,
     QGraphicsPixmapItem,
+    QSizePolicy,
 )
 
 
@@ -106,7 +107,7 @@ class Gui(QWidget):
         bkgrd_pixmap = QPixmap(f'{DIR_PATH}/assets/dark-blue-background.jpg')
         self.bkgrd = QGraphicsPixmapItem(bkgrd_pixmap)
         self.bkgrd.setZValue(-1000)
-        self.bkgrd.setScale(2)
+        self.bkgrd.setScale(5)
         self.scene.addItem(self.bkgrd)
 
         # view
@@ -117,7 +118,7 @@ class Gui(QWidget):
 
         # interface
         self.textbox = QLineEdit()
-        self.textbox.setFixedHeight(HEIGHT / 5)
+        self.textbox.setFixedHeight(HEIGHT / 5) 
         self.textbox.setPlaceholderText("Enter your guess: ")
         self.textbox.installEventFilter(self)
 
@@ -252,7 +253,6 @@ class Gui(QWidget):
 
     def move_all_items(self, dx, dy):
         self.origin.moveBy(dx, dy)
-        self.bkgrd.moveBy(dx / 10, dy / 10)
         for item in self.items.values():
             item.moveBy(dx, dy)
     
@@ -294,6 +294,8 @@ class Gui(QWidget):
             self.handle_mouse_move(event)
         elif (event.type() == QEvent.KeyPress):
             self.handle_key_press(event)
+        elif (event.type() == QEvent.Resize):
+            self.handle_resize_event(event)
         
         # Debug
         elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
@@ -325,6 +327,10 @@ class Gui(QWidget):
             text = self.textbox.text()
             self.guess(text)
     
+    def handle_resize_event(self, event: QResizeEvent):
+        size = event.size()
+        self.scene.setSceneRect(0, 0, size.width(), size.height())
+    
     # Settings
     def toggle_autocenter(self):
         self.autocenterflag = not self.autocenterflag
@@ -333,6 +339,6 @@ class Gui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    gui = Gui(model_name='googlenews', debug=True)
+    gui = Gui(model_name='v1', debug=True)
     gui.show()
     app.exec()
