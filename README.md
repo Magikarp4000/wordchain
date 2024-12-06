@@ -1,2 +1,2 @@
-## Run
-- Run gui.py
+## To run
+1. Run gui.py
