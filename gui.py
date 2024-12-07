@@ -249,7 +249,8 @@ class Gui(QWidget):
             elif try_num + 1 < MAX_TRIES:
                 self.remove_item(word)
                 self.remove_item(f'line_{word}_{closest_word}')
-        print('exhausted')
+        if self.debug:
+            print(f"Exhausted {MAX_TRIES} tries for '{word}'")
         return node
 
     def add_node(self, word, closest_word=None, coords=None, center_flag=None):
@@ -351,6 +352,6 @@ class Gui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    gui = Gui(model_name='v1', debug=True)
+    gui = Gui(model_name='googlenews')
     gui.show()
     app.exec()
