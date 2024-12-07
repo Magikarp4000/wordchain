@@ -4,16 +4,23 @@ from gensim.models import KeyedVectors
 
 import numpy as np
 import json
+import os
 
 from utils import *
 
 
+def get_model_path(file_name):
+    model_path = f"{DIR_PATH}/models/{file_name}"
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    return model_path
+
 def download(model_name, file_name):
     model = api.load(model_name)
-    model.save(f"{DIR_PATH}/models/{file_name}/{file_name}.model")
+    model.save(f"{get_model_path(file_name)}/{file_name}.model")
 
 def load(file_name):
-    path = f"{DIR_PATH}/models/{file_name}/{file_name}.model"
+    path = f"{get_model_path(file_name)}/{file_name}.model"
     try:
         return Word2Vec.load(path)
     except AttributeError:
@@ -28,13 +35,13 @@ def load_words():
     return open(f"{DIR_PATH}/datasets/words/en.txt", 'r').read().split('\n')
 
 def load_embedding(file_name):
-    path = f'{DIR_PATH}/models/{file_name}/{file_name}_embed.json'
+    path = f"{get_model_path(file_name)}/{file_name}_embed.json"
     f = open(path, 'r')
     data = json.load(f)
     return {word: np.array(data[word]) for word in data}
 
 def save_embedding(file_name, embedding):
-    path = f'{DIR_PATH}/models/{file_name}/{file_name}_embed.json'
+    path = f"{get_model_path(file_name)}/{file_name}_embed.json"
     f = open(path, 'w')
     data = json.dumps(embedding)
     f.write(data)
