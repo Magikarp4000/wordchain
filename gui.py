@@ -86,9 +86,14 @@ class StaticText(QGraphicsTextItem):
         self.setDefaultTextColor(Qt.red)
         self.setZValue(1)
 
-    def update(self, text):
-        self.setPlainText(text)
+    def update(self, text=None):
+        if text is not None:
+            self.setPlainText(text)
         self.setPos(self.base_pos - self.boundingRect().center())
+    
+    def update_pos(self, pos: QPointF):
+        self.base_pos = pos
+        self.update()
     
     def clear(self):
         self.update("")
@@ -98,8 +103,11 @@ class Gui(QWidget):
     def __init__(self, model_name='v1', debug=False, mouse_debug=False):
         super().__init__()
 
+        # window
+        self.setWindowTitle('Wordchain')
+
         # scene
-        self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT / 5)
+        self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT /5)
 
         self.display_text = StaticText("", WIDTH / 2, 4 * HEIGHT / 5 - DISPLAY_TEXT_PAD)
         self.scene.addItem(self.display_text)
@@ -118,7 +126,7 @@ class Gui(QWidget):
 
         # interface
         self.textbox = QLineEdit()
-        self.textbox.setFixedHeight(HEIGHT / 5) 
+        self.textbox.setFixedHeight(HEIGHT / 5)
         self.textbox.setPlaceholderText("Enter your guess: ")
         self.textbox.installEventFilter(self)
 
@@ -329,7 +337,11 @@ class Gui(QWidget):
     
     def handle_resize_event(self, event: QResizeEvent):
         size = event.size()
-        self.scene.setSceneRect(0, 0, size.width(), size.height())
+        if size.height() > HEIGHT / 5:
+            self.scene.setSceneRect(0, 0, size.width(), size.height())
+            pos = QPointF(size.width() / 2, size.height() - DISPLAY_TEXT_PAD)
+            self.display_text.update_pos(pos)
+            self.center_on(self.prev_node)
     
     # Settings
     def toggle_autocenter(self):
