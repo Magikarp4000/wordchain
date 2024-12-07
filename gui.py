@@ -242,13 +242,13 @@ class Gui(QWidget):
             pos = self.calc_pos(closest_word, line_len)
             node = self._add_node(word, pos, colour)
             line = self._add_line(word, closest_word)
-            
-            print(node.pos())
+
             if not self.collide(node) and not self.collide(line):
                 return node
             elif try_num + 1 < MAX_TRIES:
                 self.remove_item(word)
                 self.remove_item(f'line_{word}_{closest_word}')
+            
         if self.debug:
             print(f"Exhausted {MAX_TRIES} tries for '{word}'")
         return node
