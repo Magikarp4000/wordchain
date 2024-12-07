@@ -9,7 +9,7 @@ import numpy as np
 from config import *
 from utils import *
 
-import json
+import dataloader
 
 
 class Agent:
@@ -28,15 +28,14 @@ class Agent:
             return f"minX: {self.minX}, minY: {self.minY}, maxX: {self.maxX}, maxY: {self.maxY}, rangeX: {self.rangeX}, rangeY: {self.rangeY}"
 
     def __init__(self, model_name='v1', tolerance=0.3, algo='default'):
-        self.model = self.load_model(model_name)
+        self.model = dataloader.load(model_name)
         self.vocab = list(self.model.wv.key_to_index.keys())
         self.vocab_set = set(self.vocab)
-        self.dictionary = self.load_words()
+        self.dictionary = dataloader.load_words()
 
-        # self.embedding = self.load_embedding(model_name)
-        # self.bounds = Agent.Bounds(np.array(list(self.embedding.values())))
-        # self.embedding = self.train_embedding()
-        # self.save_embedding(model_name)
+        if algo == '2d':
+            self.embedding = dataloader.load_embedding(model_name)
+            self.bounds = Agent.Bounds(np.array(list(self.embedding.values())))
 
         self.tolerance = tolerance
 
@@ -52,37 +51,12 @@ class Agent:
         }
         self.algo = self.algos[algo]
 
-    def load_model(self, model_name):
-        path = f"{DIR_PATH}/models/{model_name}/{model_name}.model"
-        try:
-            return Word2Vec.load(path)
-        except:
-            keyed_vectors = KeyedVectors.load(path)
-            model = Word2Vec()
-            model.wv = keyed_vectors
-            return model
-    
-    def load_words(self):
-        return open(f"{DIR_PATH}/datasets/words/en.txt", 'r').read().split('\n')
-
     def train_embedding(self):
         vectors = np.array(self.model.wv.vectors)
         tsne = TSNE(n_components=2, random_state=0)
         raw = tsne.fit_transform(vectors).tolist()
         embedding = {word: val for word, val in zip(self.vocab, raw)}
         return embedding
-    
-    def save_embedding(self, model_name):
-        path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
-        f = open(path, 'w')
-        data = json.dumps(self.embedding)
-        f.write(data)
-
-    def load_embedding(self, model_name):
-        path = f'{DIR_PATH}/models/{model_name}/{model_name}_embed.json'
-        f = open(path, 'r')
-        data = json.load(f)
-        return {word: np.array(data[word]) for word in data}
 
     def get_random_word(self):
         return random.choice(self.vocab)
