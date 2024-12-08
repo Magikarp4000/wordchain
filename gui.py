@@ -246,12 +246,16 @@ class Gui(QWidget):
         return line
     
     def collide(self, src: QGraphicsItem):
+        node_cols, line_cols = 0, 0
         for other in self.items.values():
             if other is src or src.is_connected(other):
                 continue
             if src.collidesWithItem(other):
-                return True
-        return False
+                if type(other) is Node:
+                    node_cols += 1
+                elif type(other) is Line:
+                    line_cols += 1
+        return node_cols, line_cols
 
     def add_node_no_collision(self, word, closest_word=None, coords=None):
         colour = self.calc_colour(word)
@@ -260,20 +264,40 @@ class Gui(QWidget):
             return self._add_node(word, coords, colour)
         
         line_len = self.calc_line_len(word, closest_word)
-        for try_num in range(MAX_TRIES):
+        best_node, best_line = None, None
+        min_node_node, min_other = math.inf, math.inf
+
+        try_num = 0
+        while try_num < MAX_TRIES:
             pos = self.calc_pos(closest_word, line_len)
             node = self._add_node(word, pos, colour)
             line = self._add_line(word, closest_word)
 
-            if not self.collide(node) and not self.collide(line):
-                return node
-            elif try_num + 1 < MAX_TRIES:
-                self.remove_item(word)
-                self.remove_item(f'line_{word}_{closest_word}')
+            node_node, node_line = self.collide(node)
+            line_node, line_line = self.collide(line)
+            other = node_line + line_node + line_line
+
+            if (node_node, other) < (min_node_node, min_other):
+                min_node_node = node_node
+                min_other = other
+                best_node = node
+                best_line = line
             
+            self.remove_item(word)
+            self.remove_item(f'line_{word}_{closest_word}')
+
+            try_num += 1
+            if (min_node_node, min_other) == (0, 0):
+                break
+        
+        self.add_item(best_node, word)
+        self.add_item(best_line, f'line_{word}_{closest_word}')
+
         if self.debug:
-            print(f"Exhausted {MAX_TRIES} tries for '{word}'")
-        return node
+            if try_num >= MAX_TRIES:
+                print(f"Exhausted {MAX_TRIES} tries for '{word}'. Node-node: {min_node_node}, Other: {min_other}")
+        
+        return best_node
 
     def add_node(self, word, closest_word=None, coords=None, center_flag=None):
         node = self.add_node_no_collision(word, closest_word, coords)
