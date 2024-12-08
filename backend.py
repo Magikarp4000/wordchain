@@ -32,6 +32,7 @@ class Agent:
         self.vocab = list(self.model.wv.key_to_index.keys())
         self.vocab_set = set(self.vocab)
         self.dictionary = dataloader.load_words()
+        self.dict_set = set(self.dictionary)
 
         if algo == '2d':
             self.embedding = dataloader.load_embedding(model_name)
@@ -84,9 +85,9 @@ class Agent:
     def validate_word(self, word):
         try:
             self.model.wv.key_to_index[word]
+            return word in self.dict_set
         except:
             return False
-        return True
 
     def get_2d(self, word):
         return self.embedding[word]
