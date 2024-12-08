@@ -5,8 +5,27 @@ from backend import Agent
 import random
 import math
 
-from PySide6.QtCore import Qt, QPointF, QPoint, QEvent, QLine, QLineF
-from PySide6.QtGui import QBrush, QPen, QMouseEvent, QKeyEvent, QResizeEvent, QPainter, QRgba64, QPixmap, QColor
+from PySide6.QtCore import (
+    Qt,
+    QPointF,
+    QPoint,
+    QEvent,
+    QLine,
+    QLineF
+)
+from PySide6.QtGui import (
+    QBrush,
+    QPen,
+    QMouseEvent,
+    QKeyEvent,
+    QResizeEvent,
+    QPainter,
+    QRgba64,
+    QPixmap,
+    QColor,
+    QIcon,
+    QWindow,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -27,6 +46,7 @@ from PySide6.QtWidgets import (
     QGraphicsSceneMouseEvent,
     QGraphicsPixmapItem,
     QSizePolicy,
+    QSystemTrayIcon,
 )
 
 
@@ -103,8 +123,10 @@ class Gui(QWidget):
     def __init__(self, model_name='v1', debug=False, mouse_debug=False):
         super().__init__()
 
-        # window
+        # window    
         self.setWindowTitle('Wordchain')
+        logo = QIcon(f'{DIR_PATH}/assets/logo.png')
+        self.setWindowIcon(logo)
 
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT /5)
@@ -352,6 +374,6 @@ class Gui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    gui = Gui(model_name='googlenews')
+    gui = Gui(model_name='v1', debug=True)
     gui.show()
     app.exec()
