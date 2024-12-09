@@ -469,7 +469,7 @@ if __name__ == '__main__':
     app = QApplication([])
     gui = Gui()
 
-    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'], daemon=True)
+    t1 = threading.Thread(target=gui.load_backend, args=[MODEL_FILE], daemon=True)
     t1.start()
 
     gui.show()

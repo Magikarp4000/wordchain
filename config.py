@@ -1,6 +1,8 @@
 """Config file."""
 
 
+MODEL_FILE = 'googlenews'
+
 FPS = 60
 
 WIDTH = 600
