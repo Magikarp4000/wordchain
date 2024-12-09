@@ -223,16 +223,16 @@ class Gui(QWidget):
 
         self.root.addWidget(self.game_widget)
 
-    def load_backend(self, model_name):
+    def load_backend(self):
         try:
-            self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+            self.backend = Agent(model_name=FILE_NAME, tolerance=TOLERANCE, algo='default')
         
         except FileNotFoundError:
             self.loading_text.setText("Downloading model...")
-            init.init(file_name=model_name)
+            init.init()
 
             self.loading_text.setText("Loading...")
-            self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+            self.backend = Agent(model_name=FILE_NAME, tolerance=TOLERANCE, algo='default')
         
         self.backend.init_core()
         QApplication.postEvent(self, QEvent(QEvent.User))
@@ -469,7 +469,7 @@ if __name__ == '__main__':
     app = QApplication([])
     gui = Gui()
 
-    t1 = threading.Thread(target=gui.load_backend, args=[MODEL_FILE], daemon=True)
+    t1 = threading.Thread(target=gui.load_backend, daemon=True)
     t1.start()
 
     gui.show()

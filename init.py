@@ -1,17 +1,12 @@
 import dataloader
 import os.path
 from utils import *
+from config import *
 
 
-# ---------------------- CONFIG ----------------------
-MODEL_NAME = 'word2vec-google-news-300'
-FILE_NAME = 'googlenews'
-# ----------------------------------------------------
-
-
-def init(file_name=FILE_NAME):
+def init():
     if os.path.isfile(f'{DIR_PATH}/models/{MODEL_NAME}/{MODEL_NAME}.model'):
-        print(f"{file_name}.model already downloaded!")
+        print(f"{FILE_NAME}.model already downloaded!")
     else:
         dataloader.download(MODEL_NAME, FILE_NAME)
 

@@ -1,7 +1,9 @@
 """Config file."""
 
-
-MODEL_FILE = 'googlenews'
+# ---------------- Model config ----------------
+MODEL_NAME = 'word2vec-google-news-300'
+FILE_NAME = 'googlenews'
+# ----------------------------------------------
 
 FPS = 60
 
