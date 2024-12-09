@@ -9,8 +9,11 @@ FILE_NAME = 'googlenews'
 # ----------------------------------------------------
 
 
-if __name__ == '__main__':
+def init(file_name=FILE_NAME):
     if os.path.isfile(f'{DIR_PATH}/models/{MODEL_NAME}/{MODEL_NAME}.model'):
-        print(f"{FILE_NAME}.model already downloaded!")
+        print(f"{file_name}.model already downloaded!")
     else:
         dataloader.download(MODEL_NAME, FILE_NAME)
+
+if __name__ == '__main__':
+    init()

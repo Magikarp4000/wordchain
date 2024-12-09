@@ -1,6 +1,7 @@
 from config import *
 from utils import *
 from backend import Agent
+import init
 
 import random
 import math
@@ -169,15 +170,15 @@ class Gui(QWidget):
         logo.setPixmap(logo_pixmap)
         logo.setAlignment(Qt.AlignHCenter)
 
-        loading_text = QLabel('Loading...')
-        loading_text.setAlignment(Qt.AlignHCenter)
-        loading_text.setFont(QFont('Arial', LOADING_TEXT_SIZE))
+        self.loading_text = QLabel('Loading...')
+        self.loading_text.setAlignment(Qt.AlignHCenter)
+        self.loading_text.setFont(QFont('Arial', LOADING_TEXT_SIZE))
 
         self.loading_widget = QWidget()
         self.loading = QVBoxLayout(self.loading_widget)
         self.loading.addWidget(title)
         self.loading.addWidget(logo)
-        self.loading.addWidget(loading_text)
+        self.loading.addWidget(self.loading_text)
 
         self.root.addWidget(self.loading_widget)
 
@@ -223,9 +224,19 @@ class Gui(QWidget):
         self.root.addWidget(self.game_widget)
 
     def load_backend(self, model_name):
-        self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+        try:
+            self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+        
+        except FileNotFoundError:
+            self.loading_text.setText("Downloading model...")
+            init.init(file_name=model_name)
+
+            self.loading_text.setText("Loading...")
+            self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+        
         self.backend.init_core()
         QApplication.postEvent(self, QEvent(QEvent.User))
+
     
     def start_game(self):
         start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
