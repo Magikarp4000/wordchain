@@ -358,22 +358,22 @@ class Gui(QWidget):
                 self.display(message)
         except AttributeError:
             pass
+    
         self.textbox.clear()
 
     # Events
-    def eventFilter(self, source, event: QEvent):
+    def eventFilter(self, src, event: QEvent):
         if (event.type() == QEvent.User):
-            print("bruh")
             self.init()
-        if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
+        elif (event.type() == QEvent.MouseMove and src is self.view.viewport()):
             self.handle_mouse_move(event)
-        elif (event.type() == QEvent.KeyPress):
+        elif (event.type() == QEvent.KeyPress and src is self.textbox):
             self.handle_key_press(event)
         elif (event.type() == QEvent.Resize):
             self.handle_resize_event(event)
         
         # Debug
-        elif (event.type() == QEvent.MouseButtonPress and source is self.view.viewport()):
+        elif (event.type() == QEvent.MouseButtonPress and src is self.view.viewport()):
             try:
                 if self.mouse_debug:
                     for label in self.items:
@@ -384,7 +384,7 @@ class Gui(QWidget):
             except AttributeError:
                 pass
 
-        return QMainWindow.eventFilter(self, source, event) 
+        return QMainWindow.eventFilter(self, src, event) 
     
     def delta_mouse_pos(self, new_pos):
         return new_pos - self.mouse_pos
@@ -420,7 +420,7 @@ if __name__ == '__main__':
     app = QApplication([])
     gui = Gui(debug=True)
 
-    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'], daemon=True)
+    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'])
     t1.start()
 
     gui.show()
