@@ -29,6 +29,8 @@ from PySide6.QtGui import (
     QColor,
     QIcon,
     QWindow,
+    QImage,
+    QFont,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -50,7 +52,8 @@ from PySide6.QtWidgets import (
     QGraphicsSceneMouseEvent,
     QGraphicsPixmapItem,
     QSizePolicy,
-    QSystemTrayIcon,
+    QLabel,
+    QStackedWidget,
 )
 
 
@@ -128,10 +131,36 @@ class Gui(QWidget):
         super().__init__()
 
         # window    
-        self.setWindowTitle('Wordchain')
-        logo = QIcon(f'{DIR_PATH}/assets/logo.png')
-        self.setWindowIcon(logo)
+        self.setWindowTitle('WordChain')
+        logo_path = f'{DIR_PATH}/assets/logo.png'
+        self.setWindowIcon(QIcon(logo_path))
 
+        self.root = QStackedLayout()
+        self.setLayout(self.root)
+
+        # loading
+        title = QLabel('WordChain')
+        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont('Arial', TITLE_SIZE))
+
+        logo_pixmap = QPixmap(logo_path).scaled(LOGO_SIZE, LOGO_SIZE)
+        logo = QLabel()
+        logo.setPixmap(logo_pixmap)
+        logo.setAlignment(Qt.AlignHCenter)
+
+        loading_text = QLabel('Loading...')
+        loading_text.setAlignment(Qt.AlignHCenter)
+        loading_text.setFont(QFont('Arial', LOADING_TEXT_SIZE))
+
+        self.loading_widget = QWidget()
+        self.loading = QVBoxLayout(self.loading_widget)
+        self.loading.addWidget(title)
+        self.loading.addWidget(logo)
+        self.loading.addWidget(loading_text)
+
+        self.root.addWidget(self.loading_widget)
+
+        # game
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT /5)
 
@@ -165,10 +194,12 @@ class Gui(QWidget):
         self.installEventFilter(self)
 
         # layout
-        self.root = QVBoxLayout()
-        self.root.addWidget(self.view)
-        self.root.addWidget(self.textbox)
-        self.setLayout(self.root)
+        self.game_widget = QWidget()
+        self.game = QVBoxLayout(self.game_widget)
+        self.game.addWidget(self.view)
+        self.game.addWidget(self.textbox)
+
+        self.root.addWidget(self.game_widget)
 
         # state
         self.mouse_pos = QPointF(0, 0)
@@ -193,6 +224,8 @@ class Gui(QWidget):
     def init(self):
         start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
         self.prev_node = start_node
+        self.root.setCurrentIndex(1)
+
         if self.debug:
             print(f"Start word: {self.backend.start}")
             print(f"Target word: {self.backend.target}\n")
@@ -420,7 +453,7 @@ if __name__ == '__main__':
     app = QApplication([])
     gui = Gui(debug=True)
 
-    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'])
+    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'], daemon=True)
     t1.start()
 
     gui.show()
