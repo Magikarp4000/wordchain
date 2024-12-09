@@ -132,18 +132,39 @@ class Gui(QWidget):
 
         # window    
         self.setWindowTitle('WordChain')
-        logo_path = f'{DIR_PATH}/assets/logo.png'
-        self.setWindowIcon(QIcon(logo_path))
+        self._logo_path = f'{DIR_PATH}/assets/logo.png'
+        self.setWindowIcon(QIcon(self._logo_path))
 
         self.root = QStackedLayout()
         self.setLayout(self.root)
 
         # loading
+        self.init_loading()
+
+        # game
+        self.init_game()
+
+        # state
+        self.mouse_pos = QPointF(0, 0)
+        self.items = {}
+        self.origin = Node("", 0, 0, 0, 0)
+        self.prev_node = None
+        
+        self.autocenterflag = False
+
+        # backend
+        self.backend = None
+
+        # debug
+        self.debug = debug
+        self.mouse_debug = mouse_debug
+    
+    def init_loading(self):
         title = QLabel('WordChain')
         title.setAlignment(Qt.AlignCenter)
         title.setFont(QFont('Arial', TITLE_SIZE))
 
-        logo_pixmap = QPixmap(logo_path).scaled(LOGO_SIZE, LOGO_SIZE, mode=Qt.SmoothTransformation)
+        logo_pixmap = QPixmap(self._logo_path).scaled(LOGO_SIZE, LOGO_SIZE, mode=Qt.SmoothTransformation)
         logo = QLabel()
         logo.setPixmap(logo_pixmap)
         logo.setAlignment(Qt.AlignHCenter)
@@ -160,7 +181,7 @@ class Gui(QWidget):
 
         self.root.addWidget(self.loading_widget)
 
-        # game
+    def init_game(self):
         # scene
         self.scene = QGraphicsScene(0, 0, WIDTH, 4 * HEIGHT /5)
 
@@ -175,9 +196,9 @@ class Gui(QWidget):
 
         # view
         self.view = QGraphicsView(self.scene)
-        self.view.viewport().installEventFilter(self)
         self.view.setMouseTracking(True)
         self.view.setRenderHint(QPainter.Antialiasing)
+        self.view.viewport().installEventFilter(self)
 
         # interface
         self.textbox = QLineEdit()
@@ -201,27 +222,12 @@ class Gui(QWidget):
 
         self.root.addWidget(self.game_widget)
 
-        # state
-        self.mouse_pos = QPointF(0, 0)
-        self.items = {}
-        self.origin = Node("", 0, 0, 0, 0)
-        self.prev_node = None
-        
-        self.autocenterflag = False
-
-        # backend
-        self.backend = None
-
-        # debug
-        self.debug = debug
-        self.mouse_debug = mouse_debug
-    
     def load_backend(self, model_name):
         self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
         self.backend.init_core()
         QApplication.postEvent(self, QEvent(QEvent.User))
     
-    def init(self):
+    def start_game(self):
         start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
         self.prev_node = start_node
         self.root.setCurrentIndex(1)
@@ -301,7 +307,7 @@ class Gui(QWidget):
                     line_cols += 1
         return node_cols, line_cols
 
-    def add_node_no_collision(self, word, closest_word=None, coords=None):
+    def add_node_min_collision(self, word, closest_word=None, coords=None):
         colour = self.calc_colour(word)
 
         if closest_word is None:
@@ -344,7 +350,7 @@ class Gui(QWidget):
         return best_node
 
     def add_node(self, word, closest_word=None, coords=None, center_flag=None):
-        node = self.add_node_no_collision(word, closest_word, coords)
+        node = self.add_node_min_collision(word, closest_word, coords)
         self.prev_node = node
         if center_flag:
             self.center_on(node)
@@ -397,7 +403,7 @@ class Gui(QWidget):
     # Events
     def eventFilter(self, src, event: QEvent):
         if (event.type() == QEvent.User):
-            self.init()
+            self.start_game()
         elif (event.type() == QEvent.MouseMove and src is self.view.viewport()):
             self.handle_mouse_move(event)
         elif (event.type() == QEvent.KeyPress and src is self.textbox):
@@ -436,12 +442,11 @@ class Gui(QWidget):
             self.guess(text)
     
     def handle_resize_event(self, event: QResizeEvent):
-        size = event.size()
-        if size.height() > HEIGHT / 5:
-            self.scene.setSceneRect(0, 0, size.width(), size.height())
-            pos = QPointF(size.width() / 2, size.height() - DISPLAY_TEXT_PAD)
-            self.display_text.update_pos(pos)
-            self.center_on(self.prev_node)
+        size = self.view.viewport().size()
+        self.scene.setSceneRect(0, 0, size.width(), size.height())
+        pos = QPointF(size.width() / 2, size.height() - DISPLAY_TEXT_PAD)
+        self.display_text.update_pos(pos)
+        self.center_on(self.prev_node)
     
     # Settings
     def toggle_autocenter(self):
