@@ -301,9 +301,9 @@ class Gui(QWidget):
             if other is src or src.is_connected(other):
                 continue
             if src.collidesWithItem(other):
-                if type(other) is Node:
+                if isinstance(other, Node):
                     node_cols += 1
-                elif type(other) is Line:
+                elif isinstance(other, Line):
                     line_cols += 1
         return node_cols, line_cols
 
