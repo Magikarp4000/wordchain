@@ -1,8 +1,8 @@
-## Setup
-1. Run `init.py`. You can download custom models by changing `MODEL_NAME`.
-
 ## Run
-1. Run `gui.py`.
+1. Run `gui.py`. You can download custom models by changing `MODEL_NAME` in `config.py`. `FILE_NAME` is the file that stores the model locally.
+
+## Manual setup (optional)
+1. Run `init.py`.
 
 ## Demos
 ![screenshot1](https://github.com/user-attachments/assets/9a0ccdf4-17de-4a78-8bd4-71ca8d7ab161)
