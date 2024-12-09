@@ -143,7 +143,7 @@ class Gui(QWidget):
         title.setAlignment(Qt.AlignCenter)
         title.setFont(QFont('Arial', TITLE_SIZE))
 
-        logo_pixmap = QPixmap(logo_path).scaled(LOGO_SIZE, LOGO_SIZE)
+        logo_pixmap = QPixmap(logo_path).scaled(LOGO_SIZE, LOGO_SIZE, mode=Qt.SmoothTransformation)
         logo = QLabel()
         logo.setPixmap(logo_pixmap)
         logo.setAlignment(Qt.AlignHCenter)
