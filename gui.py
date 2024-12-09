@@ -5,13 +5,17 @@ from backend import Agent
 import random
 import math
 
+import time
+import threading
+
 from PySide6.QtCore import (
     Qt,
     QPointF,
     QPoint,
     QEvent,
     QLine,
-    QLineF
+    QLineF,
+    Signal,
 )
 from PySide6.QtGui import (
     QBrush,
@@ -120,7 +124,7 @@ class StaticText(QGraphicsTextItem):
 
 
 class Gui(QWidget):
-    def __init__(self, model_name='v1', debug=False, mouse_debug=False):
+    def __init__(self, debug=False, mouse_debug=False):
         super().__init__()
 
         # window    
@@ -158,6 +162,8 @@ class Gui(QWidget):
         self.autocenterbtn.resize(0.2 * WIDTH, 0.1 * HEIGHT)
         self.scene.addWidget(self.autocenterbtn)
 
+        self.installEventFilter(self)
+
         # layout
         self.root = QVBoxLayout()
         self.root.addWidget(self.view)
@@ -168,24 +174,29 @@ class Gui(QWidget):
         self.mouse_pos = QPointF(0, 0)
         self.items = {}
         self.origin = Node("", 0, 0, 0, 0)
+        self.prev_node = None
         
         self.autocenterflag = False
 
         # backend
-        self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
-        self.backend.init_core()
-
-        start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
-        self.prev_node = start_node
+        self.backend = None
 
         # debug
         self.debug = debug
         self.mouse_debug = mouse_debug
-
+    
+    def load_backend(self, model_name):
+        self.backend = Agent(model_name=model_name, tolerance=TOLERANCE, algo='default')
+        self.backend.init_core()
+        QApplication.postEvent(self, QEvent(QEvent.User))
+    
+    def init(self):
+        start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
+        self.prev_node = start_node
         if self.debug:
             print(f"Start word: {self.backend.start}")
             print(f"Target word: {self.backend.target}\n")
-    
+
     def add_item(self, item, key):
         self.items[key] = item
         self.scene.addItem(item)
@@ -312,11 +323,13 @@ class Gui(QWidget):
             item.moveBy(dx, dy)
     
     def center_on(self, item: QGraphicsItem):
-        width, height = self.scene.sceneRect().width(), self.scene.sceneRect().height()
-        offset = QPointF((width - NODE_SIZE)/ 2, (height - NODE_SIZE) / 2)
-        delta = -item.scenePos() + offset
-
-        self.move_all_items(delta.x(), delta.y())
+        try:
+            width, height = self.scene.sceneRect().width(), self.scene.sceneRect().height()
+            offset = QPointF((width - NODE_SIZE)/ 2, (height - NODE_SIZE) / 2)
+            delta = -item.scenePos() + offset
+            self.move_all_items(delta.x(), delta.y())
+        except AttributeError:
+            pass
 
     def win(self):
         self.display_text.update("Congratulations! You won!")
@@ -331,20 +344,27 @@ class Gui(QWidget):
         self.display_text.clear()
 
     def guess(self, word):
-        state, message = self.backend.update(word)
-        if state == VALID or state == WON:
-            self.successful_guess(word, message)
-            if state == WON:
-                self.win()
-            # Debug
-            if self.debug:
-                print(f"Similarity: {self.backend.get_similarity(word, message, adjust=True)}")
-        else:
-            self.display(message)
+        try:
+            state, message = self.backend.update(word)
+            if state == VALID or state == WON:
+                closest_word = message
+                self.successful_guess(word, closest_word)
+                if state == WON:
+                    self.win()
+                # Debug
+                if self.debug:
+                    print(f"Similarity: {self.backend.get_similarity(word, closest_word, adjust=True)}")
+            else:
+                self.display(message)
+        except AttributeError:
+            pass
         self.textbox.clear()
 
     # Events
     def eventFilter(self, source, event: QEvent):
+        if (event.type() == QEvent.User):
+            print("bruh")
+            self.init()
         if (event.type() == QEvent.MouseMove and source is self.view.viewport()):
             self.handle_mouse_move(event)
         elif (event.type() == QEvent.KeyPress):
@@ -398,6 +418,10 @@ class Gui(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    gui = Gui(model_name='v1', debug=True)
+    gui = Gui(debug=True)
+
+    t1 = threading.Thread(target=gui.load_backend, args=['googlenews'], daemon=True)
+    t1.start()
+
     gui.show()
     app.exec()
