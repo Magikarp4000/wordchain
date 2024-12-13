@@ -74,6 +74,7 @@ class Node(QGraphicsEllipseItem):
         self.label = QGraphicsTextItem(text, self)
         offset = self.boundingRect().center() - self.label.boundingRect().center()
         self.label.setPos(offset)
+        self.label.setDefaultTextColor(Qt.white)
     
     def add_edge(self, edge):
         self.edges.add(edge)
@@ -464,6 +465,7 @@ class Gui(QWidget):
         self.autocenterflag = not self.autocenterflag
         if self.autocenterflag:
             self.center_on(self.prev_node)
+
 
 if __name__ == '__main__':
     app = QApplication([])
