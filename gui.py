@@ -237,7 +237,6 @@ class Gui(QWidget):
         
         self.backend.init_core()
         QApplication.postEvent(self, QEvent(QEvent.User))
-
     
     def start_game(self):
         start_node = self.add_node(self.backend.start, coords=QPointF(0, 0), center_flag=True)
